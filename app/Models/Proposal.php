@@ -13,7 +13,7 @@ class Proposal extends Model
         'proposal_literature', 'proposal_methodology', 'proposal_results', 
         'proposal_reference', 
          'proposal_submitted_date', 'proposal_end_date', 
-        'proposal_budget', 'user_id'
+        'proposal_budget', 'user_id', 'created_at'
     ];
 
     public function user()

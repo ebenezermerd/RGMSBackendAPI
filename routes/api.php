@@ -53,28 +53,23 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Proposal Status Assignments
-    Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function () {
-        Route::get('/status', [StatusAssignmentController::class, 'getProposalStatus']);
-        Route::group(['prefix' => 'phases/{phase_id}'], function () {
-            Route::get('/status', [StatusAssignmentController::class, 'getPhaseStatus']);
-            Route::group(['prefix' => 'activities/{activity_id}'], function () {
-                Route::get('/status', [StatusAssignmentController::class, 'getActivityStatus']);
-            });
-        });
+Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function () {
+    Route::get('/status', [StatusAssignmentController::class, 'getProposalStatus']);
+    Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
+    Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
 
-        // Routes for Phases
-        Route::post('/phases', [PhaseController::class, 'store']);
-        // Routes for Activities
-        Route::post('/phases/{phaseId}/activities', [ActivityController::class, 'store']);
-    });
+    Route::group(['prefix' => 'phases/{phase_id}'], function () {
+        Route::get('/status', [StatusAssignmentController::class, 'getPhaseStatus']);
+        Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
+        Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
 
-    // Researcher Role-Specific Routes
-    Route::middleware('role:researcher')->group(function () {
-        Route::get('/researcher-area', function () {
-            return response()->json(['message' => 'Welcome, Researcher!']);
+        Route::group(['prefix' => 'activities/{activity_id}'], function () {
+            Route::get('/status', [StatusAssignmentController::class, 'getActivityStatus']);
+            Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
+            Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
         });
     });
-
+});
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
 

@@ -93,6 +93,7 @@ class ProposalController extends Controller
         // Create the proposal
         $proposalData = $request->all();
         $proposalData['user_id'] = $user_id;
+        $proposalData['created_at'] = now(); // Set the created_at to the current time
         $proposal = Proposal::create($proposalData);
 
         // Assign status to the proposal (default to 'pending')

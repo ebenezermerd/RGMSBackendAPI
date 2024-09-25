@@ -16,7 +16,7 @@ class CoeProposalController extends Controller
     public function index($coeClassName)
     {
         $proposals = Proposal::where('COE', $coeClassName)
-            ->with(['user','phases', 'phases.activities', 'collaborators'])
+            ->with(['user','phases', 'phases.activities', 'collaborators', 'reviews'])
             ->get();
         return response()->json($proposals);
     }
@@ -94,6 +94,8 @@ class CoeProposalController extends Controller
 
     return response()->json($reviewedProposals, 200);
 }
+
+
 
 
 // remove reivewer from the proposal

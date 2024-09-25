@@ -27,14 +27,29 @@ class StatusAssignmentController extends Controller
         return response()->json($statusAssignment, 201);
     }
 
-    public function getStatusesForEntity($type, $id)
+    public function getStatusAssignments($statusableType, $statusableId)
     {
-        $statuses = StatusAssignment::where('statusable_type', $type)
-            ->where('statusable_id', $id)
+        $statuses = StatusAssignment::where('statusable_type', $statusableType)
+            ->where('statusable_id', $statusableId)
             ->with('status')
             ->get();
 
         return response()->json($statuses);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status_id' => 'required|exists:statuses,id',
+        ]);
+
+        $statusAssignment = StatusAssignment::findOrFail($id);
+        $statusAssignment->update($validated);
+
+        return response()->json([
+            'message' => 'Status updated successfully',
+            'data' => $statusAssignment
+        ], 200);
     }
     public function getProposalStatus($user_id, $proposal_id)
 {

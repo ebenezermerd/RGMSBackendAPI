@@ -75,6 +75,11 @@ class CoeClassController extends Controller
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
+          // Check if the role is being changed from 'coe' to another role
+          if ($user->role->role_name === 'coe' && $request->role !== 'coe') {
+            // Remove COE class relationship
+            UserCoeAssignment::where('user_id', $user->id)->delete();
+        }
 
         $user->role_id = match ($request->role) {
             'coe' => 4,

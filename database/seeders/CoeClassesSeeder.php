@@ -24,11 +24,11 @@ class CoeClassesSeeder extends Seeder
                 'description' => 'Dedicated to research and innovation in construction materials, quality control, and advanced construction technologies.'
             ],
             [
-                'name' => 'High-Performance Computing & Big Data Analytics',
+                'name' => 'High Performance Computing And Big Data Analytics',
                 'description' => 'Specializes in advanced computing technologies, data processing algorithms, and data-driven decision-making tools.'
             ],
             [
-                'name' => 'Mineral Exploration, Extraction, and Processing',
+                'name' => 'Mineral Exploration Extraction and Processing',
                 'description' => 'Advances sustainable mining practices, mineral resource management, and innovative processing techniques.'
             ],
             [

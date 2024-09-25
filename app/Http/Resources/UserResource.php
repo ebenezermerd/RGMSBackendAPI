@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             "username"=> $this->username,
             "email"=> $this->email,
             "organization"=> $this->organization,
+            "role_id"=> $this->role_id,
             "phone_number"=> $this->phone_number,
             'coeClasses' => CoeClassResource::collection($this->whenLoaded('coeClass')),
             "created_at"=> $this->created_at->format('Y-m-d H:i:s'),
