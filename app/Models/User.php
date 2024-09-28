@@ -20,7 +20,7 @@ class User extends Authenticatable
     protected $fillable = [
         'first_name', 'last_name','username', 'email', 'phone_number', 'password', 
         'organization', 'role_id', 'city', 'present_address', 
-        'permanent_address', 'date_of_birth', 'bio', 'profile_image'
+        'permanent_address', 'date_of_birth', 'bio', 'profile_image', 'research_call_state'
    
     ];
 
@@ -69,6 +69,9 @@ public function proposalsAssigned()
     return $this->belongsToMany(Proposal::class, 'user_proposal_assignments', 'reviewer_id', 'proposal_id')
                 ->withTimestamps() // Using the custom pivot table
                 ->with(['phases', 'phases.activities', 'reviews']);
+}
+public function activities(){
+    return $this->hasMany(ActivityHistory::class);
 }
 
     /**

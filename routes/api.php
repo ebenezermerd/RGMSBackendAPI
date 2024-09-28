@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ActivityHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoeClassController;
 use App\Http\Controllers\CoeDashboardController;
@@ -23,10 +24,14 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/coe-classes', [CoeClassController::class, 'getAllCoeClasses']);
 // Protected Routes
+Route::get('/call-status', [AdminController::class,'getCallToggleState']);
 Route::middleware('auth:sanctum')->group(function () {
 
     // Admin Routes
     Route::group(['prefix' => 'admin/'],function () {
+        Route::get('/activities', [ActivityHistoryController::class, 'index']);
+Route::post('/activities', [ActivityHistoryController::class, 'store']);
+Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCallState']);
         Route::get('/', [AdminController::class, 'index']);
         Route::get('/{user}', [AdminController::class, 'show']);
         Route::put('/{user}', [AdminController::class, 'update']);
@@ -35,15 +40,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
         Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
     });
-
+    
     // User-specific resource routes
-    Route::apiResource('users', UserController::class);
+    // Get the authenticated user details
+    Route::apiResource('/user', UserController::class);
+    Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);
     Route::group(['prefix' => 'users/{user}'], function () {
         Route::apiResource('messages', MessageController::class);
         Route::apiResource('proposals', ProposalController::class);
         Route::apiResource('transactions', TransactionController::class);
     });
-
+    
     // Proposal Phases and Activities
     Route::group(['prefix' => 'users/{user}/proposals/{proposal}'], function () {
         Route::apiResource('phases', PhaseController::class);
@@ -73,8 +80,6 @@ Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function (
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Get the authenticated user details
-    Route::get('/user', [UserController::class, 'getUser']);
 });
 
 // COE Class Management

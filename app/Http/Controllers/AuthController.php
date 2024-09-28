@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -70,7 +71,7 @@ class AuthController extends Controller
         'access_token' => $token,
         'token_type' => 'Bearer',
         'role' => $role, // Send role name to frontend
-        'user' => $user,
+        'user' => new UserResource($user), // Send user details to frontend
         'coeClasses' => $user->coeClasses // Include coeClasses in the response
     ]);
 }

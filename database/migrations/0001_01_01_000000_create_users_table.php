@@ -28,6 +28,7 @@ return new class extends Migration
             $table->date('date_of_birth')->nullable();
             $table->text('bio')->nullable();
             $table->string('profile_image')->nullable();
+            $table->boolean('research_call_state')->default(false);
             $table->timestamps();
             $table->timestamp('email_verified_at')->nullable();
         });

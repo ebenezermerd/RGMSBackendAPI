@@ -9,6 +9,7 @@ use App\Models\Proposal;
 use App\Models\Reviewer;
 use App\Models\Review;
 use Storage;
+use App\Http\Resources\UserResource;
 
 class CoeProposalController extends Controller
 {
@@ -16,10 +17,17 @@ class CoeProposalController extends Controller
     public function index($coeClassName)
     {
         $proposals = Proposal::where('COE', $coeClassName)
-            ->with(['user','phases', 'phases.activities', 'collaborators', 'reviews'])
+            ->with(['phases', 'phases.activities', 'collaborators', 'reviews'])
             ->get();
+    
+        // Transform the user data using UserResource
+        $proposals->each(function ($proposal) {
+            $proposal->user = new UserResource($proposal->user);
+        });
+    
         return response()->json($proposals);
     }
+    
 
     // Get a single proposal by ID
     public function show($coeClassName, $proposalId)
@@ -55,7 +63,7 @@ class CoeProposalController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     public function getAssignedReviewers($coeClassName, $proposalId)
     {
         $proposal = Proposal::where('COE', $coeClassName)->find($proposalId);
@@ -69,36 +77,36 @@ class CoeProposalController extends Controller
         //                    ->pluck('reviewer')
         //                    ->unique('id')
         //                    ->values();
-       
-                          $reviewers = $proposal->reviewers()->get();
+
+        $reviewers = $proposal->reviewers()->get();
 
         return response()->json($reviewers);
     }
 
     public function getReviewedProposals($coeClassName)
-{
-    $proposals = Proposal::with(['reviews', 'user', 'reviewers', 'phases', 'phases.activities', 'assignedReviewers'])
-        ->where('COE', $coeClassName)
-        ->get();
-         // Filter only reviewed proposals (those with reviews, scores, and comments)
-         $reviewedProposals = $proposals->filter(function ($proposal) {
+    {
+        $proposals = Proposal::with(['reviews', 'user', 'reviewers', 'phases', 'phases.activities', 'assignedReviewers'])
+            ->where('COE', $coeClassName)
+            ->get();
+        // Filter only reviewed proposals (those with reviews, scores, and comments)
+        $reviewedProposals = $proposals->filter(function ($proposal) {
             return $proposal->reviews->isNotEmpty(); // Check if proposal has reviewers assigned
         });
 
-           // Add reviewers from reviews to each proposal
-     $reviewedProposals->each(function ($proposal) {
-        $reviewerIds = $proposal->reviews->pluck('reviewer_id')->unique();
-        $reviewers = User::whereIn('id', $reviewerIds)->get();
-        $proposal->reviewers_from_reviews = $reviewers;
-    });
+        // Add reviewers from reviews to each proposal
+        $reviewedProposals->each(function ($proposal) {
+            $reviewerIds = $proposal->reviews->pluck('reviewer_id')->unique();
+            $reviewers = User::whereIn('id', $reviewerIds)->get();
+            $proposal->reviewers_from_reviews = $reviewers;
+        });
 
-    return response()->json($reviewedProposals, 200);
-}
-
-
+        return response()->json($reviewedProposals, 200);
+    }
 
 
-// remove reivewer from the proposal
+
+
+    // remove reivewer from the proposal
     public function removeReviewer($coeClassName, $proposalId, $reviewerId)
     {
         $proposal = Proposal::where('COE', $coeClassName)->findOrFail($proposalId);
@@ -119,7 +127,7 @@ class CoeProposalController extends Controller
             // Use the actual path inside the storage/app folder
             return response()->download(storage_path("app/{$proposal->file_path}"));
         }
-        
+
 
         return response()->json(['message' => 'File not found.'], 404);
     }

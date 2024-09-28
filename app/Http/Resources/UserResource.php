@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,8 +22,16 @@ class UserResource extends JsonResource
             "username"=> $this->username,
             "email"=> $this->email,
             "organization"=> $this->organization,
-            "role_id"=> $this->role_id,
+            "present_address"=> $this->present_address,
+            "permanent_address"=> $this->permanent_address,
+            "date_of_birth"=> $this->date_of_birth,
+            'profile_image' => $this->profile_image ? asset(path: "storage/{$this->profile_image}") : null,  // Send full URL
             "phone_number"=> $this->phone_number,
+            "city"=> $this->city,
+            "bio"=> $this->bio,
+            "research_call_state"=> $this->research_call_state,
+            "role_id"=> $this->role_id,
+            "role" => new RoleResource($this->whenLoaded('role')),
             'coeClasses' => CoeClassResource::collection($this->whenLoaded('coeClass')),
             "created_at"=> $this->created_at->format('Y-m-d H:i:s'),
             "updated_at"=> $this->updated_at->format('Y-m-d H:i:s'),

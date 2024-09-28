@@ -15,7 +15,7 @@ class AdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
-        return User::with(['role', 'coeClasses'])->get();
+        return User::with(['role', 'coeClasses', 'proposals'])->get();
     }
 
     public function show(User $user)
@@ -48,6 +48,33 @@ class AdminController extends Controller
     {
         $user->delete();
         return response()->json(['message' => 'User deleted successfully']);
+    }
+
+    public function toggleResearchCallState(Request $request)
+    {
+        $request->validate([
+            'admin_id' => 'required|exists:users,id',
+            'state' => 'required|boolean',
+        ]);
+
+        $admin = User::find($request->admin_id);
+        $admin->research_call_state = $request->state;
+        $admin->save();
+
+        return response()->json(['message' => 'Research call state updated successfully']);
+    }
+
+    public function getCallToggleState(Request $request)
+    {
+        $admin = User::whereHas('role', function ($query) {
+            $query->where('role_name', 'admin');
+        })->first();
+
+        if (!$admin) {
+            return response()->json(['error' => 'Admin not found'], 404);
+        }
+
+        return response()->json(['state' => $admin->research_call_state]);
     }
 
     // get all coe classes
