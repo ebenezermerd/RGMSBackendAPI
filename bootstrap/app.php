@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Middleware\CheckRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,16 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
-        $middleware->alias(
-            [
-                'api' => [
-                    \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-                    'throttle:api',
-                    \Illuminate\Routing\Middleware\SubstituteBindings::class,
-                ],
-
-            ]
-        );
+        $middleware->group('api', [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            'throttle:api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
