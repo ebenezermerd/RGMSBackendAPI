@@ -18,29 +18,18 @@ use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
 
 
 Route::get('/coe-classes', [CoeClassController::class, 'getAllCoeClasses']);
 // Protected Routes
-Route::get('/call-status', [AdminController::class,'getCallToggleState']);
+Route::get('/call-status', [AdminController::class, 'getCallToggleState']);
+
+
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Admin Routes
-    Route::group(['prefix' => 'admin/'],function () {
-        Route::get('/activities', [ActivityHistoryController::class, 'index']);
-Route::post('/activities', [ActivityHistoryController::class, 'store']);
-Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCallState']);
-        Route::get('/', [AdminController::class, 'index']);
-        Route::get('/{user}', [AdminController::class, 'show']);
-        Route::put('/{user}', [AdminController::class, 'update']);
-        Route::delete('/{user}', [AdminController::class, 'destroy']);
-        Route::patch('/change-role', [CoeClassController::class, 'changeUserRole']); // Change user role to COE or admin
-        Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
-        Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
-    });
-    
+
     // User-specific resource routes
     // Get the authenticated user details
     Route::apiResource('/user', UserController::class);
@@ -50,7 +39,7 @@ Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCal
         Route::apiResource('proposals', ProposalController::class);
         Route::apiResource('transactions', TransactionController::class);
     });
-    
+
     // Proposal Phases and Activities
     Route::group(['prefix' => 'users/{user}/proposals/{proposal}'], function () {
         Route::apiResource('phases', PhaseController::class);
@@ -60,23 +49,37 @@ Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCal
     });
 
     // Proposal Status Assignments
-Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function () {
-    Route::get('/status', [StatusAssignmentController::class, 'getProposalStatus']);
-    Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
-    Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
-
-    Route::group(['prefix' => 'phases/{phase_id}'], function () {
-        Route::get('/status', [StatusAssignmentController::class, 'getPhaseStatus']);
+    Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function () {
+        Route::get('/status', [StatusAssignmentController::class, 'getProposalStatus']);
         Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
         Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
 
-        Route::group(['prefix' => 'activities/{activity_id}'], function () {
-            Route::get('/status', [StatusAssignmentController::class, 'getActivityStatus']);
+        Route::group(['prefix' => 'phases/{phase_id}'], function () {
+            Route::get('/status', [StatusAssignmentController::class, 'getPhaseStatus']);
             Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
             Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
+
+            Route::group(['prefix' => 'activities/{activity_id}'], function () {
+                Route::get('/status', [StatusAssignmentController::class, 'getActivityStatus']);
+                Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
+                Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
+            });
         });
     });
-});
+    // Admin Routes
+    Route::group(['prefix' => 'admin/'], function () {
+        Route::get('/activities', [ActivityHistoryController::class, 'index']);
+        Route::post('/activities', [ActivityHistoryController::class, 'store']);
+        Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCallState']);
+        Route::get('/', [AdminController::class, 'index']);
+        Route::get('/{user}', [AdminController::class, 'show']);
+        Route::put('/{user}', [AdminController::class, 'update']);
+        Route::delete('/{user}', [AdminController::class, 'destroy']);
+        Route::patch('/change-role', [CoeClassController::class, 'changeUserRole']); // Change user role to COE or admin
+        Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
+        Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
+    });
+
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -93,7 +96,7 @@ Route::prefix('coe-classes')->group(function () {
 
 // User Assignments to COE Classes
 Route::prefix('coe-assignments')->group(function () {
-   
+
 });
 
 // Proposal Management under COE

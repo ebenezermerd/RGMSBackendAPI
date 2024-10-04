@@ -41,6 +41,20 @@ class UserSeeder extends Seeder
             $this->command->error('COE role not found. Please seed roles table first.');
             return;
         }
+        // Ensure the 'Auditor' role exists
+        $auditorRole = Role::where('role_name', 'auditor')->first();
+
+        if (!$auditorRole) {
+            $this->command->error('Auditor role not found. Please seed roles table first.');
+            return;
+        }
+        // Ensure the 'Directorate' role exists
+        $directorateRole = Role::where('role_name', 'directorate')->first();
+
+        if (!$directorateRole) {
+            $this->command->error('Directorate role not found. Please seed roles table first.');
+            return;
+        }
 
         // Ensure the 'researcher' role exists
         $researcherRole = Role::where('role_name', 'researcher')->first();
@@ -103,6 +117,43 @@ class UserSeeder extends Seeder
                 'permanent_address' => '456 Permanent Address',
                 'date_of_birth' => now()->subYears(30), // Default date of birth
                 'bio' => 'Default admin user.',
+                'profile_image' => null, // Default profile image if applicable
+            ]
+        );
+
+        // Create or update the auditor user
+        User::updateOrCreate(
+            ['username' => 'auditor'],
+            [
+                'first_name' => 'Auditor',
+                'last_name' => 'User',
+                'email' => 'auditor@gmail.com',
+                'phone_number' => '1234567890',
+                'password' => Hash::make('auditor'), // Hashing the password for security
+                'role_id' => $auditorRole->id, // Assign the auditor role
+                'city' => 'Default City',
+                'present_address' => '123 Auditor Street',
+                'permanent_address' => '456 Permanent Address',
+                'date_of_birth' => now()->subYears(30), // Default date of birth
+                'bio' => 'Default auditor user.',
+                'profile_image' => null, // Default profile image if applicable
+            ]
+        );
+        // Create or update the directorate user
+        User::updateOrCreate(
+            ['username' => 'directorate'],
+            [
+                'first_name' => 'Directorate',
+                'last_name' => 'User',
+                'email' => 'directorate@gmail.com',
+                'phone_number' => '1234567890',
+                'password' => Hash::make('directorate'), // Hashing the password for security
+                'role_id' => $directorateRole->id, // Assign the directorate role
+                'city' => 'Default City',
+                'present_address' => '123 Directorate Street',
+                'permanent_address' => '456 Permanent Address',
+                'date_of_birth' => now()->subYears(30), // Default date of birth
+                'bio' => 'Default directorate user.',
                 'profile_image' => null, // Default profile image if applicable
             ]
         );

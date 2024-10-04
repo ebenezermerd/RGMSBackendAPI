@@ -12,7 +12,6 @@ use Validator;
 class UserController extends Controller
 {
 
-
     public function index(Request $request)
     {
         // Load the authenticated user with the 'coeClasses' relationship
@@ -47,6 +46,14 @@ class UserController extends Controller
                 'message' => 'Unauthorized action'
             ], 401);
         }
+    }
+    //get authenticated user 
+    public function getAuthenticatedUser(){
+        $user = Auth::user()->load('role');
+        return response()->json([
+            'message' => 'Authenticated user',
+            'user' => new UserResource($user)
+        ]);
     }
 
     /**

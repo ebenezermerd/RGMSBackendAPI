@@ -28,6 +28,14 @@ class RolesSeeder extends Seeder
                 'id' => 4,
                 'role_name' => 'coe',
             ],
+            [
+                'id' => 5,
+                'role_name' => 'auditor',
+            ],
+            [
+                'id' => 6,
+                'role_name' => 'directorate',
+            ],
         ];
 
         // Insert roles into the roles table
