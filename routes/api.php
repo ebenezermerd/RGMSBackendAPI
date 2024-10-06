@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Proposal Phases and Activities
     Route::group(['prefix' => 'users/{user}/proposals/{proposal}'], function () {
+        Route::get('/', [ProposalController::class, 'show']);
         Route::apiResource('phases', PhaseController::class);
         Route::group(['prefix' => 'phases/{phase}'], function () {
             Route::apiResource('activities', ActivityController::class);
@@ -52,17 +53,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::group(['prefix' => 'users/{user_id}/proposals/{proposal_id}'], function () {
         Route::get('/status', [StatusAssignmentController::class, 'getProposalStatus']);
         Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
-        Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
+        Route::post('/update-status', [ProposalController::class, 'updateStatus']);
 
         Route::group(['prefix' => 'phases/{phase_id}'], function () {
             Route::get('/status', [StatusAssignmentController::class, 'getPhaseStatus']);
             Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
-            Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
+            Route::post('/status/{status_id}', [ProposalController::class, 'updateStatus']);
 
             Route::group(['prefix' => 'activities/{activity_id}'], function () {
                 Route::get('/status', [StatusAssignmentController::class, 'getActivityStatus']);
                 Route::post('/status', [StatusAssignmentController::class, 'assignStatus']);
-                Route::put('/status/{status_id}', [StatusAssignmentController::class, 'updateStatus']);
+                Route::post('/status/{status_id}', [ProposalController::class, 'updateStatus']);
             });
         });
     });

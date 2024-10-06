@@ -11,6 +11,14 @@ use App\Models\Role;
 
 class ReviewerController extends Controller
 {
+
+    protected $statusAssignmentController;
+
+    public function __construct(StatusAssignmentController $statusAssignmentController)
+    {
+        $this->statusAssignmentController = $statusAssignmentController;
+    }
+
     // Get all reviewers for a specific COE class
     public function index()
     {
@@ -101,8 +109,10 @@ class ReviewerController extends Controller
             ]);
             $reviewDataArray[] = $review;
         }
-        // Optionally update proposal status
-        $proposal->update(['status' => 'reviewed']);
+
+        // Update the proposal status to 'reviewed'
+       
+      $this->statusAssignmentController->updateProposalStatus($proposal, 'reviewed');
 
         return response()->json([
             'message' => 'Proposal reviewed and submitted successfully.',

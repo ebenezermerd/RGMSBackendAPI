@@ -23,6 +23,7 @@ class PhaseResource extends JsonResource
             'phase_objective' => $this->phase_objective,
             'proposal_id' => $this->proposal_id,
             'status_assignments' => StatusAssignmentResource::collection($this->whenLoaded('statusAssignments')),
+            'latest_status' => $this->latestStatusAssignment ? new StatusAssignmentResource($this->latestStatusAssignment) : null,
             'activities' => ActivityResource::collection($this->activities),
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),

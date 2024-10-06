@@ -59,4 +59,11 @@ public function assignedReviewers()
     return $this->hasMany(UserProposalAssignment::class, 'proposal_id');
 }
 
+public function latestStatusAssignment()
+{
+    return $this->hasOne(StatusAssignment::class, 'statusable_id')
+                ->where('statusable_type', self::class)
+                ->latestOfMany();
+}
+
 }

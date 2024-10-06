@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\StatusAssignmentResource;
+use App\Models\Status;
 use Illuminate\Http\Request;
 use App\Models\StatusAssignment;
 use App\Models\Proposal;
@@ -37,20 +39,12 @@ class StatusAssignmentController extends Controller
         return response()->json($statuses);
     }
 
-    public function updateStatus(Request $request, $id)
+    public function updateStatus($model, $newStatusName)
     {
-        $validated = $request->validate([
-            'status_id' => 'required|exists:statuses,id',
-        ]);
-
-        $statusAssignment = StatusAssignment::findOrFail($id);
-        $statusAssignment->update($validated);
-
-        return response()->json([
-            'message' => 'Status updated successfully',
-            'data' => $statusAssignment
-        ], 200);
+        $status = Status::where('name', $newStatusName)->firstOrFail();
+        $this->assignStatusToModel($model, $status);
     }
+
     public function getProposalStatus($user_id, $proposal_id)
 {
     // Validate the proposal belongs to the user
@@ -61,13 +55,19 @@ class StatusAssignmentController extends Controller
     }
 
     // Get status for the proposal
-    $statusAssignments = StatusAssignment::where('statusable_type', 'App\\Models\\Proposal')
-        ->where('statusable_id', $proposal->id)
-        ->with('status')
-        ->get();
+    $latestStatusAssignment = StatusAssignment::where('statusable_type', 'App\\Models\\Proposal')
+    ->where('statusable_id', $proposal->id)
+    ->orderBy('created_at', 'desc')
+    ->first();
 
-    return response()->json(['statuses' => $statusAssignments->pluck('status.name')]);
+    if (!$latestStatusAssignment) {
+        return response()->json(['message' => 'No status found for the proposal'], 404);
+    }
+
+    return new StatusAssignmentResource($latestStatusAssignment);
 }
+
+
 public function getPhaseStatus($user_id, $proposal_id, $phase_id)
 {
     // Validate the proposal and phase belong to the user
@@ -79,13 +79,18 @@ public function getPhaseStatus($user_id, $proposal_id, $phase_id)
     }
 
     // Get status for the phase
-    $statusAssignments = StatusAssignment::where('statusable_type', 'App\\Models\\Phase')
-        ->where('statusable_id', $phase->id)
-        ->with('status')
-        ->get();
+    $latestStatusAssignment = StatusAssignment::where('statusable_type', 'App\\Models\\Phase')
+    ->where('statusable_id', $phase->id)
+    ->orderBy('created_at', 'desc')
+    ->first();
 
-    return response()->json(['statuses' => $statusAssignments->pluck('status.name')]);
+if (!$latestStatusAssignment) {
+    return response()->json(['message' => 'No status found for the phase'], 404);
 }
+
+return new StatusAssignmentResource($latestStatusAssignment);
+}
+
 public function getActivityStatus($user_id, $proposal_id, $phase_id, $activity_id)
 {
     // Validate the proposal, phase, and activity belong to the user
@@ -97,14 +102,56 @@ public function getActivityStatus($user_id, $proposal_id, $phase_id, $activity_i
         return response()->json(['message' => 'Activity not found for this user, proposal, and phase'], 404);
     }
 
-    // Get status for the activity
-    $statusAssignments = StatusAssignment::where('statusable_type', 'App\\Models\\Activity')
-        ->where('statusable_id', $activity->id)
-        ->with('status')
-        ->get();
+    $latestStatusAssignment = StatusAssignment::where('statusable_type', 'App\\Models\\Activity')
+    ->where('statusable_id', $activity->id)
+    ->orderBy('created_at', 'desc')
+    ->first();
 
-    return response()->json(['statuses' => $statusAssignments->pluck('status.name')]);
+if (!$latestStatusAssignment) {
+    return response()->json(['message' => 'No status found for the activity'], 404);
 }
+
+return new StatusAssignmentResource($latestStatusAssignment);
+}
+
+
+public function initializeProposalStatus(Proposal $proposal)
+{
+      $status = Status::where('name', 'pending')->firstOrFail();
+    $this->assignStatusToModel($proposal, $status);
+
+    $proposal->load('phases.activities'); // Ensure relationships are loaded
+
+    foreach ($proposal->phases as $phase) {
+        $this->assignStatusToModel($phase, $status);
+        foreach ($phase->activities as $activity) {
+            $this->assignStatusToModel($activity, $status);
+        }
+    }
+}
+private function assignStatusToModel($model, Status $status)
+{
+    StatusAssignment::create([
+        'status_id' => $status->id,
+        'statusable_id' => $model->id,
+        'statusable_type' => get_class($model),
+    ]);
+}
+public function updateProposalStatus(Proposal $proposal, $newStatusName)
+{
+    $status = Status::where('name', $newStatusName)->firstOrFail();
+    $this->assignStatusToModel($proposal, $status);
+
+    foreach ($proposal->phases as $phase) {
+        $this->assignStatusToModel($phase, $status);
+        foreach ($phase->activities as $activity) {
+            $this->assignStatusToModel($activity, $status);
+        }
+    }
+    
+}
+
+
 
 
 

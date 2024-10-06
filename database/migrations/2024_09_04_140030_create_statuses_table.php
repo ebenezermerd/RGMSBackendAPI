@@ -13,10 +13,20 @@ return new class extends Migration
     {
         Schema::create('statuses', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // E.g., 'pending', 'approved', 'rejected'
+            $table->string('name');
             $table->timestamps();
         });
-        
+
+        // Insert initial statuses
+        DB::table('statuses')->insert([
+            ['name' => 'pending'],
+            ['name' => 'reviewed'],
+            ['name' => 'evaluated'],
+            ['name' => 'approved'],
+            ['name' => 'rejected'],
+            ['name' => 'started'],
+            ['name' => 'on delay'],
+        ]);
     }
 
     /**

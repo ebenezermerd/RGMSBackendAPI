@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\StatusAssignmentResource;
 use App\Models\User;
 use App\Models\UserProposalAssignment;
 use Illuminate\Http\Request;
@@ -17,24 +18,34 @@ class CoeProposalController extends Controller
     public function index($coeClassName)
     {
         $proposals = Proposal::where('COE', $coeClassName)
-            ->with(['phases', 'phases.activities', 'collaborators', 'reviews'])
+            ->with(['latestStatusAssignment','phases.latestStatusAssignment', 'phases.activities.latestStatusAssignment', 'phases', 'phases.activities', 'collaborators', 'reviews'])
             ->get();
-    
+
         // Transform the user data using UserResource
         $proposals->each(function ($proposal) {
             $proposal->user = new UserResource($proposal->user);
+            $proposal->latest_status = $proposal->latestStatusAssignment 
+                ? new StatusAssignmentResource($proposal->latestStatusAssignment) 
+                : null;
         });
-    
+
+      
+
         return response()->json($proposals);
     }
-    
+
 
     // Get a single proposal by ID
     public function show($coeClassName, $proposalId)
     {
         $proposal = Proposal::where('COE', $coeClassName)
-            ->with(['phases', 'phases.activities', 'collaborators'])
+            ->with(['latestStatusAssignment', 'phases', 'phases.activities', 'collaborators'])
             ->findOrFail($proposalId);
+
+            $proposal->latest_status = $proposal->latestStatusAssignment 
+            ? new StatusAssignmentResource($proposal->latestStatusAssignment) 
+            : null;
+
         return response()->json($proposal);
     }
 
@@ -83,9 +94,9 @@ class CoeProposalController extends Controller
         return response()->json($reviewers);
     }
 
-    public function getReviewedProposals($coeClassName)
+        public function getReviewedProposals($coeClassName)
     {
-        $proposals = Proposal::with(['reviews', 'user', 'reviewers', 'phases', 'phases.activities', 'assignedReviewers'])
+        $proposals = Proposal::with(['latestStatusAssignment', 'reviews', 'user', 'reviewers', 'phases', 'phases.activities', 'assignedReviewers'])
             ->where('COE', $coeClassName)
             ->get();
         // Filter only reviewed proposals (those with reviews, scores, and comments)
@@ -98,6 +109,10 @@ class CoeProposalController extends Controller
             $reviewerIds = $proposal->reviews->pluck('reviewer_id')->unique();
             $reviewers = User::whereIn('id', $reviewerIds)->get();
             $proposal->reviewers_from_reviews = $reviewers;
+
+            $proposal->latest_status = $proposal->latestStatusAssignment 
+            ? new StatusAssignmentResource($proposal->latestStatusAssignment) 
+            : null;
         });
 
         return response()->json($reviewedProposals, 200);

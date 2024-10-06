@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProposalResource;
+use App\Http\Resources\StatusAssignmentResource;
 use App\Models\Proposal;
 use App\Models\User;
 use App\Models\Phase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Validator;
 use App\Models\StatusAssignment;
 use App\Models\Status;
@@ -16,6 +18,13 @@ use App\Models\Collaborator;
 
 class ProposalController extends Controller
 {
+
+    protected $statusAssignmentController;
+
+    public function __construct(StatusAssignmentController $statusAssignmentController)
+    {
+        $this->statusAssignmentController = $statusAssignmentController;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -27,7 +36,7 @@ class ProposalController extends Controller
             'message' => 'Unauthenticated Access',
             ], 401);
         }
-        $proposals = Proposal::where('user_id', $user->id)->with('statusAssignments.status')->get();
+        $proposals = Proposal::where('user_id', $user->id)->with('latestStatusAssignment')->get();
 
         if ($proposals->count() > 0) {
             return ProposalResource::collection($proposals);
@@ -87,21 +96,11 @@ class ProposalController extends Controller
             ], 422);
         }
 
-        // Retrieve or create 'pending' status ID
-        $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
-
         // Create the proposal
         $proposalData = $request->all();
         $proposalData['user_id'] = $user_id;
         $proposalData['created_at'] = now(); // Set the created_at to the current time
         $proposal = Proposal::create($proposalData);
-
-        // Assign status to the proposal (default to 'pending')
-        StatusAssignment::create([
-            'status_id' => $request->proposal_status_id ?? $pendingStatus->id,
-            'statusable_id' => $proposal->id,
-            'statusable_type' => Proposal::class,
-        ]);
 
         // Loop through the phases and create them
         foreach ($request->phases as $phaseData) {
@@ -124,33 +123,23 @@ class ProposalController extends Controller
         ]);
         $collaborator->save(); // Save each collaborator
     }
-
-            // Assign status to the phase (default to 'pending' if not provided)
-            StatusAssignment::create([
-                'status_id' => $phaseData['phase_status_id'] ?? $pendingStatus->id,
-                'statusable_id' => $phase->id,
-                'statusable_type' => Phase::class,
-            ]);
-
             // Loop through the activities for each phase and create them
             foreach ($phaseData['activities'] as $activityData) {
                 $activity = $phase->activities()->create([
                     'activity_name' => $activityData['activity_name'],
                     'activity_budget' => $activityData['activity_budget']
                 ]);
-
-                // Assign status to the activity (default to 'pending' if not provided)
-                StatusAssignment::create([
-                    'status_id' => $activityData['activity_status_id'] ?? $pendingStatus->id,
-                    'statusable_id' => $activity->id,
-                    'statusable_type' => Activity::class,
-                ]);
             }
         }
+       // Initialize statuses for the proposal, phases, and activities
+       $this->statusAssignmentController->initializeProposalStatus($proposal);
 
+           // Eager load the latest status assignment
+    
         return response()->json([
+
             'message' => 'Proposal created successfully with phases and activities',
-            'data' => new ProposalResource($proposal->load(['phases.activities.statusAssignments']))
+            'data' => new ProposalResource($proposal)
         ], 201);
     }
 
@@ -161,15 +150,28 @@ class ProposalController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($userId, $id)
     {
         $proposal = Proposal::with([
-            'statusAssignments.status',
+            'latestStatusAssignment',
             'phases.statusAssignments.status',
             'phases.activities.statusAssignments.status'
-        ])->find($id);
+        ])->where('user_id', $userId)->find($id);
     
         if ($proposal) {
+            // Transform the latest status assignment using StatusAssignmentResource
+            $proposal->latest_status = new StatusAssignmentResource($proposal->latestStatusAssignment);
+
+            // Transform the latest status for phases
+            $proposal->phases->each(function ($phase) {
+                $phase->latest_status = new StatusAssignmentResource($phase->latestStatusAssignment);
+
+                // Transform the latest status for activities
+                $phase->activities->each(function ($activity) {
+                    $activity->latest_status = new StatusAssignmentResource($activity->latestStatusAssignment);
+                });
+            });
+
             return response()->json([
                 'message' => 'Proposal found',
                 'data' => new ProposalResource($proposal)
@@ -197,6 +199,39 @@ class ProposalController extends Controller
         //
     }
 
+    public function updateStatus(Request $request, $user_id, $proposal_id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string',
+            'type' => 'required|string|in:proposal,phase,activity',
+        ]);
+
+        $status = $validated['status'];
+        $type = $validated['type'];
+
+        try {
+            switch ($type) {
+                case 'proposal':
+                    $model = Proposal::where('id', $proposal_id)->where('user_id', $user_id)->firstOrFail();
+                    break;
+                case 'phase':
+                    $model = Phase::where('proposal_id', $proposal_id)->firstOrFail();
+                    break;
+                case 'activity':
+                    $model = Activity::whereHas('phase', function ($query) use ($proposal_id) {
+                        $query->where('proposal_id', $proposal_id);
+                    })->firstOrFail();
+                    break;
+                default:
+                    return response()->json(['error' => 'Invalid type'], 400);
+            }
+
+            $this->statusAssignmentController->updateStatus($model, $status);
+            return response()->json(['message' => 'Status updated successfully'], 200);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['error' => 'Resource not found'], 404);
+        }
+    }
     /**
      * Remove the specified resource from storage.
      */

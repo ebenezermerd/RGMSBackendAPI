@@ -27,10 +27,10 @@ class ProposalResource extends JsonResource
             'proposal_submitted_date' => $this->proposal_submitted_date,
             'proposal_end_date' => $this->proposal_end_date,
             'proposal_budget' => $this->proposal_budget,
+            'latest_status' => $this->latestStatusAssignment ? new StatusAssignmentResource($this->latestStatusAssignment) : null,
             'phases' => PhaseResource::collection($this->phases),
             'collaborators' => CollaboratorResource::collection($this->collaborators),
             'user_id' => $this->user_id,
-            'status_assignments' => StatusAssignmentResource::collection($this->whenLoaded('statusAssignments')),
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),
         ];

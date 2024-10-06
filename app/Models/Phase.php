@@ -23,4 +23,11 @@ class Phase extends Model
     {
         return $this->morphMany(StatusAssignment::class, 'statusable');
     }
+    public function latestStatusAssignment()
+    {
+        return $this->hasOne(StatusAssignment::class, 'statusable_id')
+                    ->where('statusable_type', self::class)
+                    ->latestOfMany();
+    }
 }
+
