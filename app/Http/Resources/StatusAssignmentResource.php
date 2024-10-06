@@ -17,6 +17,7 @@ class StatusAssignmentResource extends JsonResource
         return [
             'status_id' => $this->status_id,
             'status_name' => $this->status->name, // Pulls the status name from the `statuses` table
+            'reason' => $this->reason ?? null, // Reason for the status change, or null if not set
             'assigned_at' => $this->created_at->toDateTimeString(), // When the status was assigned
         ];
     }

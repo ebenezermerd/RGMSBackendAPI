@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('status_id')->constrained('statuses')->onDelete('cascade'); // The status assigned
             $table->morphs('statusable'); // statusable_id, statusable_type for polymorphic relation
+            $table->text('reason')->nullable();
             $table->timestamps();
         });
         

@@ -176,6 +176,8 @@ class ProposalController extends Controller
     {
         $proposal = Proposal::with([
             'latestStatusAssignment',
+            'phases.latestStatusAssignment',
+            'phases.activities.latestStatusAssignment',
             'statusAssignments',
             'phases.statusAssignments.status',
             'phases.activities.statusAssignments.status'
@@ -222,11 +224,13 @@ class ProposalController extends Controller
         //
     }
 
-    public function updateStatus(Request $request, $user_id, $proposal_id)
+    public function updateStatus(Request $request, $coeName,  $proposal_id)
     {
+        //dd($coeName, $proposal_id);
         $validated = $request->validate([
-            'status' => 'required|string',
+            'status' => 'required|string', 
             'type' => 'required|string|in:proposal,phase,activity',
+            'reason' => 'nullable|string'
         ]);
 
         $status = $validated['status'];
@@ -235,7 +239,7 @@ class ProposalController extends Controller
         try {
             switch ($type) {
                 case 'proposal':
-                    $model = Proposal::where('id', $proposal_id)->where('user_id', $user_id)->firstOrFail();
+                    $model = Proposal::where('id', $proposal_id)->where('COE', $coeName)->firstOrFail();
                     break;
                 case 'phase':
                     $model = Phase::where('proposal_id', $proposal_id)->firstOrFail();
@@ -249,7 +253,7 @@ class ProposalController extends Controller
                     return response()->json(['error' => 'Invalid type'], 400);
             }
 
-            $this->statusAssignmentController->updateStatus($model, $status);
+            $this->statusAssignmentController->updateStatus($model, $status, $request->reason);
             return response()->json(['message' => 'Status updated successfully'], 200);
         } catch (NotFoundHttpException $e) {
             return response()->json(['error' => 'Resource not found'], 404);

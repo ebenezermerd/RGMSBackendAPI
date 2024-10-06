@@ -27,7 +27,7 @@ class Phase extends Model
     {
         return $this->hasOne(StatusAssignment::class, 'statusable_id')
                     ->where('statusable_type', self::class)
-                    ->latestOfMany();
+                    ->latest();
     }
 }
 

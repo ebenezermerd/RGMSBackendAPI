@@ -110,7 +110,8 @@ Route::prefix('coe/{coeClassId}/proposals')->group(function () {
     Route::post('/{proposalId}/remove-reviewer/{reviewerId}', [CoeProposalController::class, 'removeReviewer']); // Detach or remove reviewer
     Route::post('/{proposalId}/download', [CoeProposalController::class, 'downloadProposal']);
     Route::get('/{proposalId}/reviewers', [CoeProposalController::class, 'getAssignedReviewers']);
-
+    Route::get('/{proposalId}/status', [StatusAssignmentController::class, 'getProposalStatus']);
+    Route::post('/{proposalId}/update-status', [ProposalController::class, 'updateStatus']);
     // Proposal Reviews
     Route::get('/{proposalId}/reviews', [CoeProposalController::class, 'getReviews']);
 });

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class StatusAssignment extends Model
 {
     use HasFactory;
-    protected $fillable = ['status_id', 'statusable_id', 'statusable_type'];
+    protected $fillable = ['status_id', 'statusable_id', 'statusable_type', 'reason'];
 
     public function status()
     {
