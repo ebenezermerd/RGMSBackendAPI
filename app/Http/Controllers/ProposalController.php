@@ -102,6 +102,13 @@ class ProposalController extends Controller
         $proposalData['created_at'] = now(); // Set the created_at to the current time
         $proposal = Proposal::create($proposalData);
 
+          // Assign status to the proposal (default to 'pending')
+      StatusAssignment::create([
+        'status_id' => $request->proposal_status_id ?? $pendingStatus->id,
+        'statusable_id' => $proposal->id,
+        'statusable_type' => Proposal::class,
+    ]);
+
         // Loop through the phases and create them
         foreach ($request->phases as $phaseData) {
             $phase = Phase::create([
@@ -123,18 +130,31 @@ class ProposalController extends Controller
         ]);
         $collaborator->save(); // Save each collaborator
     }
+
+    // Assign status to the phase (default to 'pending' if not provided)
+    StatusAssignment::create([
+        'status_id' => $phaseData['phase_status_id'] ?? $pendingStatus->id,
+        'statusable_id' => $phase->id,
+        'statusable_type' => Phase::class,
+    ]);
             // Loop through the activities for each phase and create them
             foreach ($phaseData['activities'] as $activityData) {
                 $activity = $phase->activities()->create([
                     'activity_name' => $activityData['activity_name'],
                     'activity_budget' => $activityData['activity_budget']
                 ]);
+
+                // Assign status to the activity (default to 'pending' if not provided)
+            StatusAssignment::create([
+                'status_id' => $activityData['activity_status_id'] ?? $pendingStatus->id,
+                'statusable_id' => $activity->id,
+                'statusable_type' => Activity::class,
+            ]);
             }
         }
-       // Initialize statuses for the proposal, phases, and activities
-       $this->statusAssignmentController->initializeProposalStatus($proposal);
+    
 
-           // Eager load the latest status assignment
+
     
         return response()->json([
 
