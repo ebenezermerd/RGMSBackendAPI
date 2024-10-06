@@ -39,7 +39,7 @@ class ProposalController extends Controller
         $proposals = Proposal::where('user_id', $user->id)->with('latestStatusAssignment')->get();
 
         if ($proposals->count() > 0) {
-            return ProposalResource::collection($proposals);
+            return  response()->json(ProposalResource::collection($proposals),200);
         } else {
             return response()->json(['message' => 'No proposals found'], 404);
         }
@@ -95,6 +95,8 @@ class ProposalController extends Controller
                 'errors' => $validateProposal->errors()
             ], 422);
         }
+                // Retrieve or create 'pending' status ID
+                $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
 
         // Create the proposal
         $proposalData = $request->all();
@@ -174,6 +176,7 @@ class ProposalController extends Controller
     {
         $proposal = Proposal::with([
             'latestStatusAssignment',
+            'statusAssignments',
             'phases.statusAssignments.status',
             'phases.activities.statusAssignments.status'
         ])->where('user_id', $userId)->find($id);
