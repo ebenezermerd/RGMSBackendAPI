@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('transaction_id')->unique();
-            $table->date('transaction_date');
-            $table->decimal('transaction_amount', 15, 2);
-            $table->string('transaction_type');
-            $table->text('transaction_description')->nullable();
-            $table->foreignId('fund_request_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            'transaction_id' => 'required|string|unique:transactions',
+            'transaction_date' => 'required|date',
+            'transaction_amount' => 'required|numeric',
+            'transaction_type' => 'required|string',
+            'transaction_description' => 'nullable|string',
+            'fund_request_id' => 'required|exists:fund_requests,id',
+            'user_id' => 'required|exists:users,id',
             $table->timestamps();
         });
     }

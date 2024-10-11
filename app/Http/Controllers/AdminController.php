@@ -1,13 +1,26 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\CoeClass;
+use App\Models\Phase;
+use App\Models\Proposal;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\StatusAssignmentResource;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AdminController extends Controller
 {
+
+    protected $statusAssignmentController;
+
+    public function __construct(StatusAssignmentController $statusAssignmentController)
+    {
+        $this->statusAssignmentController = $statusAssignmentController;
+    }
+    
     public function index(Request $request)
     {
         // Check if the authenticated user is an admin
@@ -77,7 +90,53 @@ class AdminController extends Controller
         return response()->json(['state' => $admin->research_call_state]);
     }
 
-    // get all coe classes
+    //get all proposals
+    public function getAllProposals()
+    {
+        $proposals = Proposal::with(['user', 'phases', 'phases.activities','collaborators', 'reviews'])->get();
+
+        $proposals->each(function ($proposal) {
+            $proposal->latest_status = new StatusAssignmentResource($proposal->latestStatusAssignment);
+        });
+
+        return response()->json($proposals);
+    }
+
+    public function updateStatus(Request $request,  $proposal_id)
+    {
+        //dd($coeName, $proposal_id);
+        $validated = $request->validate([
+            'status' => 'required|string', 
+            'type' => 'required|string|in:proposal,phase,activity',
+            'reason' => 'nullable|string'
+        ]);
+
+        $status = $validated['status'];
+        $type = $validated['type'];
+
+        try {
+            switch ($type) {
+                case 'proposal':
+                    $model = Proposal::where('id', $proposal_id)->firstOrFail();
+                    break;
+                case 'phase':
+                    $model = Phase::where('proposal_id', $proposal_id)->firstOrFail();
+                    break;
+                case 'activity':
+                    $model = Activity::whereHas('phase', function ($query) use ($proposal_id) {
+                        $query->where('proposal_id', $proposal_id);
+                    })->firstOrFail();
+                    break;
+                default:
+                    return response()->json(['error' => 'Invalid type'], 400);
+            }
+
+            $this->statusAssignmentController->updateStatus($model, $status, $request->reason);
+            return response()->json(['message' => 'Status updated successfully'], 200);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['error' => 'Resource not found'], 404);
+        }
+    }
   
 }
 

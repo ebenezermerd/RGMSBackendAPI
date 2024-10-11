@@ -39,7 +39,7 @@ class StatusAssignmentController extends Controller
         return response()->json($statuses);
     }
 
-    public function updateStatus($model, $newStatusName, $reason)
+    public function updateStatus($model, $newStatusName, $reason = null)
     {
         $status = Status::where('name', $newStatusName)->firstOrFail();
         $this->assignStatusToModel($model, $status, $reason);

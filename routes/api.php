@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoeClassController;
 use App\Http\Controllers\CoeDashboardController;
 use App\Http\Controllers\CoeProposalController;
+use App\Http\Controllers\FundRequestController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\ProposalController;
@@ -31,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // User-specific resource routes
+    Route::resource('fund-requests', FundRequestController::class);
+    Route::resource('transactions', TransactionController::class);
     // Get the authenticated user details
     Route::apiResource('/user', UserController::class);
     Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);
@@ -38,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('messages', MessageController::class);
         Route::apiResource('proposals', ProposalController::class);
         Route::apiResource('transactions', TransactionController::class);
+        Route::get('/fund-requests', [FundRequestController::class, 'userFundRequests']);
     });
 
     // Proposal Phases and Activities
@@ -79,6 +83,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/change-role', [CoeClassController::class, 'changeUserRole']); // Change user role to COE or admin
         Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
         Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
+    });
+
+    Route::group(['prefix' => 'directorate/'], function () {
+        Route::get('/proposals', [AdminController::class, 'getAllProposals']);
+        Route::post('/proposals/{proposalId}/update-status', [AdminController::class, 'updateStatus']);
     });
 
     // Logout route
