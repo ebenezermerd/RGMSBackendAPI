@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('request_status');
             $table->text('request_reason');
             $table->decimal('request_amount', 15, 2);
+            $table->date('request_needed_date')->nullable();
             $table->string('request_proof')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('activity_id')->constrained()->onDelete('cascade');

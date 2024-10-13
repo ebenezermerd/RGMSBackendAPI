@@ -32,8 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     // User-specific resource routes
-    Route::resource('fund-requests', FundRequestController::class);
-    Route::resource('transactions', TransactionController::class);
+    Route::apiResource('fund-requests', FundRequestController::class);
+    Route::apiResource('transactions', TransactionController::class);
     // Get the authenticated user details
     Route::apiResource('/user', UserController::class);
     Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);

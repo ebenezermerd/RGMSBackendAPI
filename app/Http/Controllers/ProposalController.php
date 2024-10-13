@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProposalResource;
 use App\Http\Resources\StatusAssignmentResource;
+use App\Models\FundRequest;
 use App\Models\Proposal;
 use App\Models\User;
 use App\Models\Phase;
@@ -224,12 +225,12 @@ class ProposalController extends Controller
         //
     }
 
-    public function updateStatus(Request $request, $coeName,  $proposal_id)
+    public function updateStatus(Request $request, $coeName, $proposal_id)
     {
         //dd($coeName, $proposal_id);
         $validated = $request->validate([
             'status' => 'required|string', 
-            'type' => 'required|string|in:proposal,phase,activity',
+            'type' => 'required|string|in:proposal,phase,activity,fundrequest',
             'reason' => 'nullable|string'
         ]);
 
@@ -248,6 +249,9 @@ class ProposalController extends Controller
                     $model = Activity::whereHas('phase', function ($query) use ($proposal_id) {
                         $query->where('proposal_id', $proposal_id);
                     })->firstOrFail();
+                    break;
+                case 'fundrequest':
+                    $model = FundRequest::where('proposal_id', $proposal_id)->firstOrFail();
                     break;
                 default:
                     return response()->json(['error' => 'Invalid type'], 400);

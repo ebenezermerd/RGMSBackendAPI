@@ -9,7 +9,7 @@ class FundRequest extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'request_status', 'request_reason', 'request_amount', 
+        'request_status', 'request_reason', 'request_amount', 'request_needed_date',
         'request_proof', 'user_id', 'activity_id', 'phase_id', 'proposal_id'
     ];
 
@@ -37,4 +37,17 @@ class FundRequest extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function statuses()
+    {
+        return $this->morphMany(StatusAssignment::class, 'statusable');
+    }
+
+    public function latestStatusAssignment()
+{
+    return $this->hasOne(StatusAssignment::class, 'statusable_id')
+                ->where('statusable_type', self::class)
+                ->latest();
+                
+}
 }

@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\FundRequestResource;
 use App\Models\FundRequest;
+use App\Models\Status;
+use App\Models\StatusAssignment;
 use Illuminate\Http\Request;
 
 class FundRequestController extends Controller
@@ -30,9 +33,9 @@ class FundRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'request_status' => 'required|string',
             'request_reason' => 'required|string',
             'request_amount' => 'required|numeric',
+            'request_needed_date' => 'nullable|date',
             'request_proof' => 'nullable|string',
             'user_id' => 'required|exists:users,id',
             'activity_id' => 'required|exists:activities,id',
@@ -40,8 +43,21 @@ class FundRequestController extends Controller
             'proposal_id' => 'required|exists:proposals,id',
         ]);
 
+
+        $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
+
         $fundRequest = FundRequest::create($request->all());
-        return response()->json($fundRequest, 201);
+
+        StatusAssignment::create([
+            'status_id' => $request->requestd_status_id ?? $pendingStatus->id,
+            'statusable_id' => $fundRequest->id,
+            'statusable_type' => FundRequest::class,
+        ]);
+
+        return response()->json([
+            'message' => 'Fund request created successfully',
+            'fund_request' => new FundRequestResource($this -> $fundRequest)
+        ], 201);
     }
 
     /**

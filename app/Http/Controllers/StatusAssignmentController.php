@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\StatusAssignmentResource;
+use App\Models\FundRequest;
 use App\Models\Status;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\StatusAssignment;
 use App\Models\Proposal;
@@ -47,9 +49,6 @@ class StatusAssignmentController extends Controller
 
     public function getProposalStatus($coeName, $proposal_id)
     {
-
-        //dd($proposal_id, $coeName);
-
         // Validate the proposal belongs to the user
         $proposal = Proposal::where('id', $proposal_id)->first();
 
@@ -69,7 +68,6 @@ class StatusAssignmentController extends Controller
 
         return new StatusAssignmentResource($latestStatusAssignment);
     }
-
 
     public function getPhaseStatus($user_id, $proposal_id, $phase_id)
     {
@@ -112,6 +110,50 @@ class StatusAssignmentController extends Controller
 
         if (!$latestStatusAssignment) {
             return response()->json(['message' => 'No status found for the activity'], 404);
+        }
+
+        return new StatusAssignmentResource($latestStatusAssignment);
+    }
+
+    public function getTransactionStatus($user_id, $transaction_id)
+    {
+        // Validate the transaction belongs to the user
+        $transaction = Transaction::where('user_id', $user_id)->where('id', $transaction_id)->first();
+
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction not found for this user'], 404);
+        }
+
+        // Get status for the transaction
+        $latestStatusAssignment = StatusAssignment::where('statusable_type', 'App\\Models\\Transaction')
+            ->where('statusable_id', $transaction->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$latestStatusAssignment) {
+            return response()->json(['message' => 'No status found for the transaction'], 404);
+        }
+
+        return new StatusAssignmentResource($latestStatusAssignment);
+    }
+
+    public function getFundRequestStatus($user_id, $fund_request_id)
+    {
+        // Validate the fund request belongs to the user
+        $fundRequest = FundRequest::where('user_id', $user_id)->where('id', $fund_request_id)->first();
+
+        if (!$fundRequest) {
+            return response()->json(['message' => 'Fund request not found for this user'], 404);
+        }
+
+        // Get status for the fund request
+        $latestStatusAssignment = StatusAssignment::where('statusable_type', 'App\\Models\\FundRequest')
+            ->where('statusable_id', $fundRequest->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$latestStatusAssignment) {
+            return response()->json(['message' => 'No status found for the fund request'], 404);
         }
 
         return new StatusAssignmentResource($latestStatusAssignment);
