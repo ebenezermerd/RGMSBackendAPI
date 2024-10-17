@@ -21,25 +21,23 @@ use Illuminate\Support\Facades\Route;
 // Public Routes
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
-
-
 Route::get('/coe-classes', [CoeClassController::class, 'getAllCoeClasses']);
-// Protected Routes
 Route::get('/call-status', [AdminController::class, 'getCallToggleState']);
 
+// CSRF Protection Route
+Route::get('/sanctum/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+});
 
-Route::middleware('auth:sanctum')->group(function () {
-
-
+// Protected Routes
+Route::middleware(['auth:sanctum'])->group(function () {
     // User-specific resource routes
-    Route::apiResource('fund-requests', FundRequestController::class);
-    Route::apiResource('transactions', TransactionController::class);
-    // Get the authenticated user details
     Route::apiResource('/user', UserController::class);
     Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);
     Route::group(['prefix' => 'users/{user}'], function () {
         Route::apiResource('messages', MessageController::class);
         Route::apiResource('proposals', ProposalController::class);
+        Route::apiResource('fund-requests', FundRequestController::class);
         Route::apiResource('transactions', TransactionController::class);
         Route::get('/fund-requests', [FundRequestController::class, 'userFundRequests']);
     });
@@ -71,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
             });
         });
     });
+
     // Admin Routes
     Route::group(['prefix' => 'admin/'], function () {
         Route::get('/activities', [ActivityHistoryController::class, 'index']);
@@ -92,7 +91,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
-
 });
 
 // COE Class Management
@@ -106,7 +104,7 @@ Route::prefix('coe-classes')->group(function () {
 
 // User Assignments to COE Classes
 Route::prefix('coe-assignments')->group(function () {
-
+    // Define routes for COE assignments here
 });
 
 // Proposal Management under COE
