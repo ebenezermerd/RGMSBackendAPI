@@ -13,12 +13,17 @@ class Proposal extends Model
         'proposal_literature', 'proposal_methodology', 'proposal_results', 
         'proposal_reference', 
          'proposal_submitted_date', 'proposal_end_date', 
-        'proposal_budget', 'user_id', 'created_at'
+        'proposal_budget', 'user_id', 'call_id', 'created_at'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function call()
+    {
+        return $this->belongsTo(Call::class);
     }
 
     public function phases()

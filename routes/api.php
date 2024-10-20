@@ -15,6 +15,7 @@ use App\Http\Controllers\StatusAssignmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CallController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/coe-classes', [CoeClassController::class, 'getAllCoeClasses']);
-Route::get('/call-status', [AdminController::class, 'getCallToggleState']);
+Route::get('/calls/latest', [CallController::class, 'index'])->name('calls.latest');
 
 // CSRF Protection Route
 Route::get('/sanctum/csrf-cookie', function () {
@@ -74,7 +75,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::group(['prefix' => 'admin/'], function () {
         Route::get('/activities', [ActivityHistoryController::class, 'index']);
         Route::post('/activities', [ActivityHistoryController::class, 'store']);
-        Route::post('/toggle-research-call', [AdminController::class, 'toggleResearchCallState']);
+        Route::post('/{adminId}/calls', [CallController::class, 'store'])->name('admin.calls.store');
         Route::get('/', [AdminController::class, 'index']);
         Route::get('/{user}', [AdminController::class, 'show']);
         Route::put('/{user}', [AdminController::class, 'update']);

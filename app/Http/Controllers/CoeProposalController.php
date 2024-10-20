@@ -110,10 +110,19 @@ class CoeProposalController extends Controller
             $reviewers = User::whereIn('id', $reviewerIds)->get();
             $proposal->reviewers_from_reviews = $reviewers;
 
+            $proposal->reviews->each(function ($review) use ($reviewers) {
+                $reviewer = User::find($review->reviewer_id);
+                if ($reviewer) {
+                    $review->reviewer_name = $reviewer->first_name . ' ' . $reviewer->last_name;
+                }
+            });
+            
             $proposal->latest_status = $proposal->latestStatusAssignment 
             ? new StatusAssignmentResource($proposal->latestStatusAssignment) 
             : null;
         });
+
+    
 
         return response()->json($reviewedProposals, 200);
     }

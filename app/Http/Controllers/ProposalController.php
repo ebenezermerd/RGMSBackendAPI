@@ -16,6 +16,7 @@ use App\Models\StatusAssignment;
 use App\Models\Status;
 use App\Models\Activity;
 use App\Models\Collaborator;
+use App\Models\Call;
 
 class ProposalController extends Controller
 {
@@ -96,8 +97,33 @@ class ProposalController extends Controller
                 'errors' => $validateProposal->errors()
             ], 422);
         }
-                // Retrieve or create 'pending' status ID
-                $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
+
+        // Retrieve the call
+        $call = Call::find($request->call_id);
+        if (!$call) {
+            return response()->json(['error' => 'Call not found'], 404);
+        }
+        
+        // Check for existing proposal
+        $existingProposal = Proposal::where('user_id', $user_id)
+                                    ->where('call_id', $request->call_id)
+                                    ->with('latestStatusAssignment')
+                                    ->first();
+        
+        if ($existingProposal) {
+            $latestStatus = new StatusAssignmentResource($existingProposal->latestStatusAssignment);
+        
+            if ($call->isResubmissionAllowed && $latestStatus->status_name === 'pending') {
+                // Update the existing proposal
+                $existingProposal->update($request->all());
+                return response()->json($existingProposal, 200);
+            } else {
+                return response()->json(['error' => 'User has already submitted a proposal for this call'], 400);
+            }
+        }
+
+        // Retrieve or create 'pending' status ID
+        $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
 
         // Create the proposal
         $proposalData = $request->all();
@@ -105,12 +131,12 @@ class ProposalController extends Controller
         $proposalData['created_at'] = now(); // Set the created_at to the current time
         $proposal = Proposal::create($proposalData);
 
-          // Assign status to the proposal (default to 'pending')
-      StatusAssignment::create([
-        'status_id' => $request->proposal_status_id ?? $pendingStatus->id,
-        'statusable_id' => $proposal->id,
-        'statusable_type' => Proposal::class,
-    ]);
+        // Assign status to the proposal (default to 'pending')
+        StatusAssignment::create([
+            'status_id' => $request->proposal_status_id ?? $pendingStatus->id,
+            'statusable_id' => $proposal->id,
+            'statusable_type' => Proposal::class,
+        ]);
 
         // Loop through the phases and create them
         foreach ($request->phases as $phaseData) {
@@ -121,25 +147,27 @@ class ProposalController extends Controller
                 'phase_objective' => $phaseData['phase_objective'],
                 'proposal_id' => $proposal->id
             ]);
-      // Loop through the collaborators and create them
-      foreach ($request->collaborators as $collaboratorData) {
-        $collaborator = new Collaborator([
-            'collaborator_name' => $collaboratorData['collaborator_name'],
-            'collaborator_gender' => $collaboratorData['collaborator_gender'],
-            'collaborator_organization' => $collaboratorData['collaborator_organization'],
-            'collaborator_phone_number' => $collaboratorData['collaborator_phone_number'],
-            'collaborator_email' => $collaboratorData['collaborator_email'],
-            'proposal_id' => $proposal->id
-        ]);
-        $collaborator->save(); // Save each collaborator
-    }
 
-    // Assign status to the phase (default to 'pending' if not provided)
-    StatusAssignment::create([
-        'status_id' => $phaseData['phase_status_id'] ?? $pendingStatus->id,
-        'statusable_id' => $phase->id,
-        'statusable_type' => Phase::class,
-    ]);
+            // Loop through the collaborators and create them
+            foreach ($request->collaborators as $collaboratorData) {
+                $collaborator = new Collaborator([
+                    'collaborator_name' => $collaboratorData['collaborator_name'],
+                    'collaborator_gender' => $collaboratorData['collaborator_gender'],
+                    'collaborator_organization' => $collaboratorData['collaborator_organization'],
+                    'collaborator_phone_number' => $collaboratorData['collaborator_phone_number'],
+                    'collaborator_email' => $collaboratorData['collaborator_email'],
+                    'proposal_id' => $proposal->id
+                ]);
+                $collaborator->save(); // Save each collaborator
+            }
+
+            // Assign status to the phase (default to 'pending' if not provided)
+            StatusAssignment::create([
+                'status_id' => $phaseData['phase_status_id'] ?? $pendingStatus->id,
+                'statusable_id' => $phase->id,
+                'statusable_type' => Phase::class,
+            ]);
+
             // Loop through the activities for each phase and create them
             foreach ($phaseData['activities'] as $activityData) {
                 $activity = $phase->activities()->create([
@@ -148,19 +176,15 @@ class ProposalController extends Controller
                 ]);
 
                 // Assign status to the activity (default to 'pending' if not provided)
-            StatusAssignment::create([
-                'status_id' => $activityData['activity_status_id'] ?? $pendingStatus->id,
-                'statusable_id' => $activity->id,
-                'statusable_type' => Activity::class,
-            ]);
+                StatusAssignment::create([
+                    'status_id' => $activityData['activity_status_id'] ?? $pendingStatus->id,
+                    'statusable_id' => $activity->id,
+                    'statusable_type' => Activity::class,
+                ]);
             }
         }
-    
 
-
-    
         return response()->json([
-
             'message' => 'Proposal created successfully with phases and activities',
             'data' => new ProposalResource($proposal)
         ], 201);
