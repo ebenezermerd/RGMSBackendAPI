@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('sender_name');
             $table->string('message_subject');
             $table->text('message_content');
+            $table->string('receiver_email');
             $table->date('message_date');
+            $table->string('profile_image')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

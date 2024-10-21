@@ -20,6 +20,7 @@ $this->call([
             CoeClassesSeeder::class,
             RolesSeeder::class,
             CallSeeder::class,
+            MessageSeeder::class,
         ]);
     }
 }

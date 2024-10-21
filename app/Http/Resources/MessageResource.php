@@ -20,7 +20,9 @@ class MessageResource extends JsonResource
             "sender_name"=> $this->sender_name,
             "message_subject"=> $this->message_subject,
             "message_content"=> $this->message_content,
+            "receiver_email"=> $this->receiver_email,
             "message_date"=> $this->message_date,
+            "profile_image"=> $this->profile_image,
             "created_at"=> $this->created_at->format('Y-m-d H:i:s'),
             'updated_at'=> $this->updated_at->format('Y-m-d H:i:s'),
         ];

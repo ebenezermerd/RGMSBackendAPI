@@ -36,7 +36,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('/user', UserController::class);
     Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);
     Route::group(['prefix' => 'users/{user}'], function () {
-        Route::apiResource('messages', MessageController::class);
+        Route::get('/messages', [MessageController::class, 'index']); // Get all messages
+        Route::post('/messages', [MessageController::class, 'store']); // Create a new message
+        Route::get('/messages/{id}', [MessageController::class, 'show']); // Show a specific message
+        Route::delete('/messages/{id}', [MessageController::class, 'destroy']); // Delete a message
         Route::apiResource('proposals', ProposalController::class);
         Route::apiResource('fund-requests', FundRequestController::class);
         Route::apiResource('transactions', TransactionController::class);
