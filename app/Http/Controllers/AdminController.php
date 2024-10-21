@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\StatusAssignmentResource;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AdminController extends Controller
@@ -24,7 +25,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         // Check if the authenticated user is an admin
-        if ($request->user()->role->role_name !== 'admin') {
+        if (!in_array($request->user()->role->role_name, ['admin', 'directorate'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
@@ -41,7 +42,7 @@ class AdminController extends Controller
 
     public function show(User $user)
     {
-        if (auth()->user()->role->role_name !== 'admin') {
+        if (!in_array(Auth::user()->role->role_name, ['admin', 'directorate'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         return $user->load('role');

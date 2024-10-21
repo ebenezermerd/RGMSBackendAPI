@@ -43,7 +43,7 @@ class ProposalController extends Controller
         if ($proposals->count() > 0) {
             return  response()->json(ProposalResource::collection($proposals),200);
         } else {
-            return response()->json(['message' => 'No proposals found'], 404);
+            return response()->json(['message' => 'No proposals found'], 201);
         }
     }
 
