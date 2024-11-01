@@ -61,7 +61,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Invalid login credentials'], 401);
     }
 
-    $user = Auth::user()->load('coeClasses'); // Load the coeClasses relationship
+    $user = Auth::user()->load('coeClass'); // Load the coeClasses relationship
     $token = $user->createToken('auth_token')->plainTextToken;
 
     // Include the role name from the roles table
@@ -73,7 +73,6 @@ class AuthController extends Controller
         'token_type' => 'Bearer',
         'role' => $role, // Send role name to frontend
         'user' => new UserResource($user), // Send user details to frontend
-        'coeClasses' => $user->coeClasses // Include coeClasses in the response
     ]);
 }
 

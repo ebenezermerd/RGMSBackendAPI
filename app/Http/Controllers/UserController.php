@@ -15,13 +15,12 @@ class   UserController extends Controller
     public function index(Request $request)
     {
         // Load the authenticated user with the 'coeClasses' relationship
-        $user = Auth::user()->load(['coeClasses', 'role']); 
+        $user = Auth::user()->load(['coeClass', 'role']); 
         
         // Return the user data as a resource
         return response()->json([
             'message' => 'User data',
             'userdata' => new UserResource($user),
-            'coeClasses' => $user->coeClasses
         ]);
     }
     /**
@@ -29,7 +28,7 @@ class   UserController extends Controller
      */
     public function show(string $id)
     {
-        $user = User::with('coeClasses')->find($id);
+        $user = User::with('coeClass')->find($id);
         
         if ($user === null) {
             return response()->json([

@@ -29,7 +29,7 @@ class AdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         
-        $users = User::with(['role', 'coeClasses', 'proposals'])->get();
+        $users = User::with(['role', 'coeClass', 'proposals'])->get();
 
         $users->each(function ($user) {
             $user->proposals->each(function ($proposal) {

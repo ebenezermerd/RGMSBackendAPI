@@ -13,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('fund_requests', function (Blueprint $table) {
             $table->id();
-            $table->string('request_status');
-            $table->text('request_reason');
+            $table->text('request_reason')->nullable();
             $table->decimal('request_amount', 15, 2);
-            $table->date('request_needed_date')->nullable();
-            $table->string('request_proof')->nullable();
+            $table->date('request_needed_date');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('activity_id')->constrained()->onDelete('cascade');
-            $table->foreignId('phase_id')->constrained()->onDelete('cascade');
+            $table->foreignId('activity_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('phase_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('proposal_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
