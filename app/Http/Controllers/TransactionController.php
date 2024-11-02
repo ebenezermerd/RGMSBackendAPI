@@ -29,7 +29,6 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'transaction_id' => 'required|string|unique:transactions',
             'transaction_date' => 'required|date',
             'transaction_amount' => 'required|numeric',
             'transaction_type' => 'required|string',
@@ -38,7 +37,9 @@ class TransactionController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $transaction = Transaction::create($request->all());
+        $transactionId = 'TXT-' . strtoupper(uniqid()) . '-' . rand(10000000, 99999999);
+
+        $transaction = Transaction::create(array_merge($request->all(), ['transaction_id' => $transactionId]));
         return response()->json($transaction, 201);
     }
     /**

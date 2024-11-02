@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->string('sender_name');
+            $table->foreignId('sender_id')->constrained('users');
+            $table->string('sender_type')->nullable(); // Store the sender type
+            $table->foreignId('receiver_id')->constrained('users')->nullable();
             $table->string('message_subject');
             $table->text('message_content');
-            $table->string('receiver_email');
-            $table->date('message_date');
-            $table->string('profile_image')->nullable();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->boolean('is_broadcast')->default(false); // Indicate if it's a broadcast message
+            $table->json('attachments')->nullable(); // Store file attachments as JSON
+            $table->boolean('is_read')->default(false);
+
             $table->timestamps();
         });
+        
     }
 
     /**

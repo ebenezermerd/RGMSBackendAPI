@@ -25,42 +25,7 @@ class MessageSeeder extends Seeder
             'user_id' => 6,
             'profile_image' => null,
             ],
-            [
-            'sender_name' => 'Coe User',
-            'receiver_email' => 'coe@gmail.com',
-            'message_subject' => 'Funding Opportunity',
-            'message_content' => 'We are excited to inform you about a new funding opportunity that may interest you.',
-            'message_date' => now(),
-            'user_id' => 6,
-            'profile_image' => null,
-            ],
-            [
-            'sender_name' => 'Coe User',
-            'receiver_email' => 'coe@gmail.com',
-            'message_subject' => 'Upcoming Workshop',
-            'message_content' => 'We are hosting a workshop next month. Please register if you are interested.',
-            'message_date' => now(),
-            'user_id' => 6,
-            'profile_image' => null,
-            ],
-            [
-            'sender_name' => 'Coe User',
-            'receiver_email' => 'coe@gmail.com',
-            'message_subject' => 'Reminder: Submission Deadline',
-            'message_content' => 'This is a friendly reminder that the submission deadline is approaching.',
-            'message_date' => now(),
-            'user_id' => 6,
-            'profile_image' => null,
-            ],
-            [
-            'sender_name' => 'Coe User',
-            'receiver_email' => 'coe@gmail.com',
-            'message_subject' => 'Collaboration Request',
-            'message_content' => 'We would like to explore potential collaboration on your research.',
-            'message_date' => now(),
-            'user_id' => 6,
-            'profile_image' => null,
-            ],
+     
         ];
 
         // Insert the messages into the database

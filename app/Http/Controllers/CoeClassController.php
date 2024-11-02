@@ -59,79 +59,10 @@ class CoeClassController extends Controller
             return response()->json(['error' => 'User is not a COE'], 403);
         }
 
-        $coeClass = $user->coeClasses->first(); // Assuming a user has one COE class
+        $coeClass = $user->coeClass->first(); // Assuming a user has one COE class
         return response()->json(['coeClass' => $coeClass->name]);
     }
-    // lets add here a function that will assign a user to role of coe
-    public function changeUserRole(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'role' => 'required|in:coe,admin,reviewer,researcher',
-        ]);
-
-        $user = User::find($request->user_id);
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-          // Check if the role is being changed from 'coe' to another role
-          if ($user->role->role_name === 'coe' && $request->role !== 'coe') {
-            // Remove COE class relationship
-            UserCoeAssignment::where('user_id', $user->id)->delete();
-        }
-
-        $user->role_id = match ($request->role) {
-            'coe' => 4,
-            'reviewer' => 3,
-            'admin' => 1,
-            default => 2,
-        };
-        $user->save();
-
-        return response()->json([
-            'message' => 'User role updated successfully',
-            'data' => $user
-        ]);
-    }
-
-    // Assign a COE class to a user
-    public function assignUserToCoe(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'coe_class_id' => 'required|exists:coe_classes,id',
-        ]);
-
-        // Check if the user already has the coe role
-        $user = User::find($request->user_id);
-
-        if ($user->role->role_name !== 'coe') {
-            return response()->json(['error' => 'User must have COE role to be assigned'], 400);
-        }
-
-        // Create or update the assignment
-        UserCoeAssignment::updateOrCreate(
-            ['user_id' => $request->user_id],
-            ['coe_class_id' => $request->coe_class_id]
-        );
-
-        return response()->json(['message' => 'User successfully assigned to COE class']);
-    }
-
-
-
-    // Show assignments for a specific COE class
-    public function showAssignments($coeClassId)
-    {
-        $coeClass = CoeClass::with('userCoeAssignments.user')->find($coeClassId);
-
-        if (!$coeClass) {
-            return response()->json(['message' => 'COE class not found'], 404);
-        }
-
-        return response()->json($coeClass->userCoeAssignments);
-    }
+   
 
     
     public function assignReviewer(Request $request, $coeClassName, $proposalId)

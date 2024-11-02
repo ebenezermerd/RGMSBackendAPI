@@ -15,13 +15,13 @@ class CoeClass extends Model
     // Define the relationship with UserCoeAssignment
     public function userCoeAssignments()
     {
-        return $this->hasMany(UserCoeAssignment::class);
+        return $this->hasOne(UserCoeAssignment::class);
     }
     // app/Models/CoeClass.php
 
-    public function users()
+    public function user()
     {
-        return $this->belongsToMany(User::class, 'user_coe_assignments', 'coe_class_id', 'user_id');
+        return $this->hasOneThrough(User::class, UserCoeAssignment::class, 'coe_class_id', 'id', 'id', 'user_id');
     }
     
 

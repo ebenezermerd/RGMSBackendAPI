@@ -11,12 +11,14 @@ use App\Models\Phase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Validator;
 use App\Models\StatusAssignment;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Status;
 use App\Models\Activity;
 use App\Models\Collaborator;
 use App\Models\Call;
+use App\Models\Message;
+use App\Models\CoeClass;
 
 class ProposalController extends Controller
 {
@@ -60,7 +62,7 @@ class ProposalController extends Controller
      */
     public function store(Request $request)
     {
-        $user_id = auth()->id();
+        $user_id = Auth::id();
 
         // Validate the proposal fields and nested phases/activities
         $validateProposal = Validator::make($request->all(), [
@@ -184,6 +186,28 @@ class ProposalController extends Controller
             }
         }
 
+        // Send a success message to the user
+        $user = Auth::user();
+        $messageContent = "Dear {$user->first_name}, your proposal titled '{$proposal->proposal_title}' has been successfully submitted. Please wait for further notice. Thank you for participating in this journey.";
+        $sender_type = 'coe_class';
+        // Retrieve the COE class by COE name
+        $coeName = str_replace('-', ' ', ucwords($request->COE, '-'));
+        $coeClass = CoeClass::where('name', $coeName)->first();
+        if (!$coeClass) {
+            return response()->json(['error' => 'COE class not found'], 404);
+        }
+
+        // Send a success message to the COE
+        $message = new Message([
+            'sender_id' => $coeClass->id,
+            'sender_type' => $sender_type,
+            'receiver_id' => Auth::id(),
+            'message_subject' => 'Proposal Submission Successful',
+            'message_content' => $messageContent,
+            'attachments' => null,
+        ]);
+        $message->save();
+
         return response()->json([
             'message' => 'Proposal created successfully with phases and activities',
             'data' => new ProposalResource($proposal)
@@ -255,7 +279,8 @@ class ProposalController extends Controller
         $validated = $request->validate([
             'status' => 'required|string', 
             'type' => 'required|string|in:proposal,phase,activity,fundrequest',
-            'reason' => 'nullable|string'
+            'reason' => 'nullable|string',
+            'possible_case' => 'nullable|string'
         ]);
 
         $status = $validated['status'];
@@ -282,11 +307,154 @@ class ProposalController extends Controller
             }
 
             $this->statusAssignmentController->updateStatus($model, $status, $request->reason);
+
+            if ($validated['status'] === 'approved' && $validated['type'] === 'proposal') {
+                $proposal = Proposal::where('id', $proposal_id)->where('COE', $coeName)->firstOrFail();
+                $this->handleProposalApprovals($proposal);
+            }
+
+            if ($validated['status'] === 'rejected' && $validated['type'] === 'proposal') {
+                $proposal = Proposal::where('id', $proposal_id)->where('COE', $coeName)->firstOrFail();
+                $this->handleProposalReject($proposal, $request->reason, $request->possible_case);
+            }
+            
             return response()->json(['message' => 'Status updated successfully'], 200);
         } catch (NotFoundHttpException $e) {
             return response()->json(['error' => 'Resource not found'], 404);
         }
     }
+
+    private function handleProposalApprovals(Proposal $approvedProposal)
+    {
+
+        $user = $approvedProposal->user;
+        
+        // Find the user with the role name of 'directorate'
+        $directorateUser = User::whereHas('role', function ($query) {
+        $query->where('role_name', 'directorate');
+        })->first();
+
+        if (!$directorateUser) {
+        return response()->json(['error' => 'Directorate user not found'], 404);
+        }
+
+        // Send a polite rejection message
+        $messageContent = "Dear {$user->first_name}, we are pleased to inform you that your proposal titled '{$approvedProposal->proposal_title}' has been approved. Congratulations on your successful submission! Please wait for further notice.";
+        $sender_type = 'directorate';
+        $message = new Message([
+        'sender_id' => $directorateUser->id,
+        'sender_type' => $sender_type,
+        'receiver_id' => $user->id,
+        'message_subject' => 'Proposal Approval Notification',
+        'message_content' => $messageContent,
+        'attachments' => null,
+        ]);
+        $message->save();
+    
+
+        // Get all other proposals for the same call_id except 'on delay'
+        $otherProposals = Proposal::where('call_id', $approvedProposal->call_id)
+            ->where('id', '!=', $approvedProposal->id)
+            ->whereHas('latestStatusAssignment', function($query) {
+            $query->whereHas('status', function($statusQuery) {
+                $statusQuery->where('name', '!=', 'on delay');
+            });
+            })
+            ->get();
+        
+        // Reject these proposals and send rejection notifications
+        foreach ($otherProposals as $otherProposal) {
+            $user = $otherProposal->user;
+        
+            // Find the user with the role name of 'directorate'
+            $directorateUser = User::whereHas('role', function ($query) {
+            $query->where('role_name', 'directorate');
+            })->first();
+
+            if (!$directorateUser) {
+            return response()->json(['error' => 'Directorate user not found'], 404);
+            }
+
+            // Send a polite rejection message
+            $messageContent = "Dear {$user->first_name}, we regret to inform you that your proposal titled '{$otherProposal->proposal_title}' has not been approved in this round. However, we encourage you to submit a new proposal in the next call for applications.";
+            $sender_type = 'directorate';
+            $message = new Message([
+            'sender_id' => $directorateUser->id,
+            'sender_type' => $sender_type,
+            'receiver_id' => $user->id,
+            'message_subject' => 'Proposal Rejection Notification',
+            'message_content' => $messageContent,
+            'attachments' => null,
+            ]);
+            $message->save();
+        }
+
+        // Notify delayed proposals about further action
+        $delayedProposals = Proposal::where('call_id', $approvedProposal->call_id)
+            ->whereHas('latestStatusAssignment', function($query) {
+            $query->whereHas('status', function($statusQuery) {
+                $statusQuery->where('name', 'on delay');
+            });
+            })
+            ->get();
+        
+            foreach ($delayedProposals as $delayedProposal) {
+                $user = $delayedProposal->user;
+                $sender_type = 'coe_class';
+                // Retrieve the COE class by COE name
+                $coeName = str_replace('-', ' ', ucwords($delayedProposal->COE, '-'));
+                $coeClass = CoeClass::where('name', $coeName)->first();
+                if (!$coeClass) {
+                    return response()->json(['error' => 'COE class not found'], 404);
+                }
+                // Send a message that their proposal is still under consideration
+                $messageContent = "Dear {$user->first_name}, your proposal titled '{$delayedProposal->proposal_title}' is still under consideration. Please stay tuned for further updates.";
+                
+                $message = new Message([
+                    'sender_id' => $coeClass->id,
+                    'sender_type' => $sender_type,
+                    'receiver_id' => $user->id,
+                    'message_subject' => 'Proposal Delayed Notification',
+                    'message_content' => $messageContent,
+                    'attachments' => null,
+                ]);
+                $message->save();
+            }
+    }
+    //proposal rejectection sent by coe to the proposal owner for the possible case and the reason
+    private function handleProposalReject(Proposal $rejectedProposal, $reason, $possible_case)
+    {
+        $user = $rejectedProposal->user;
+        $sender_type='coe_class';
+
+        // Send a rejection message
+        $messageContent = "Dear {$user->first_name}, we're about to inform you that your proposal titled '{$rejectedProposal->proposal_title}' has been rejected. Reason: {$reason}. Possible case: {$possible_case}.";
+        
+        $call = Call::find($rejectedProposal->call_id);
+        if ($call && $call->isResubmissionAllowed) {
+            $messageContent .= " You may review your application and resubmit it.";
+        } else {
+            $messageContent .= " Please wait for the next call for applications.";
+        }
+
+        $coeName = str_replace('-', ' ', ucwords($rejectedProposal->COE, '-'));
+        $coeClass = CoeClass::where('name', $coeName)->first();
+        if (!$coeClass) {
+            return response()->json(['error' => 'COE class not found'], 404);
+        }
+        
+        $message = new Message([
+            'sender_id' => $coeClass->id,
+            'sender_type' => $sender_type,
+            'receiver_id' => $user->id,
+            'message_subject' => 'Proposal Rejection Notification',
+            'message_content' => $messageContent,
+            'attachments' => null,
+        ]);
+        $message->save();
+    }
+   
+
     /**
      * Remove the specified resource from storage.
      */

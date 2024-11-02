@@ -32,7 +32,7 @@ class UserResource extends JsonResource
             "research_call_state"=> $this->research_call_state,
             "role_id"=> $this->role_id,
             "role" => new RoleResource($this->whenLoaded('role')),
-            'coeClasses' => CoeClassResource::collection($this->whenLoaded('coeClass')),
+            'coeClass' => new CoeClassResource($this->whenLoaded('coeClass')),
             "created_at"=> $this->created_at->format('Y-m-d H:i:s'),
             "updated_at"=> $this->updated_at->format('Y-m-d H:i:s'),
         ];

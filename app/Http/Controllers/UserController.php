@@ -15,13 +15,12 @@ class   UserController extends Controller
     public function index(Request $request)
     {
         // Load the authenticated user with the 'coeClasses' relationship
-        $user = Auth::user()->load(['coeClasses', 'role']); 
+        $user = Auth::user()->load(['coeClass', 'role']); 
         
         // Return the user data as a resource
         return response()->json([
             'message' => 'User data',
             'userdata' => new UserResource($user),
-            'coeClasses' => $user->coeClasses
         ]);
     }
     /**
@@ -29,7 +28,7 @@ class   UserController extends Controller
      */
     public function show(string $id)
     {
-        $user = User::with('coeClasses')->find($id);
+        $user = User::with('coeClass')->find($id);
         
         if ($user === null) {
             return response()->json([
@@ -78,6 +77,8 @@ class   UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+
+        try{ 
         $user = User::with('role')->find($id);
     
         if ($user === null) {
@@ -131,11 +132,19 @@ class   UserController extends Controller
     
         // Update other user fields
         $user->update($request->except('profile_image'));
-    
+        
         return response()->json([
             'message' => 'User updated successfully',
             'user' => new UserResource($user)
         ], 200);
+    
+    }catch (\Exception $e) {
+        // Log the error for debugging
+        \Log::error('Profile update failed: ' . $e->getMessage());
+
+        return response()->json(['error' => 'Profile update failed'], 500);
+     
+}
     }
     
 

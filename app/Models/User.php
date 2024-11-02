@@ -24,6 +24,19 @@ class User extends Authenticatable
    
     ];
 
+    // Define the relationship for messages sent by the user
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    // Define the relationship for messages received by the user
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+
     public function messages()
     {
         return $this->hasMany(Message::class);
@@ -56,12 +69,12 @@ class User extends Authenticatable
     }
     public function coeAssignments()
 {
-    return $this->hasMany(UserCoeAssignment::class);
+    return $this->hasOne(UserCoeAssignment::class);
 }
 
-public function coeclasses()
+public function coeClass()
 {
-    return $this->belongsToMany(CoeClass::class, 'user_coe_assignments', 'user_id', 'coe_class_id');
+    return $this->hasOneThrough(CoeClass::class, UserCoeAssignment::class, 'user_id', 'id', 'id', 'coe_class_id');
 }
 
 public function proposalsAssigned()

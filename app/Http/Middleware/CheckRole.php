@@ -15,17 +15,18 @@ class CheckRole
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
-     * @param  string  $role
+     * @param  string  $roles
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, $roles)
     {
-        Log::info("CheckRole middleware executed for role: $role");
-        if (!auth()->check() || auth()->user()->role->role_name !== $role) {
+        Log::info("CheckRole middleware executed for roles: $roles");
+        $rolesArray = explode('|', $roles);
+
+        if (!Auth::check() || !in_array(Auth::user()->role->role_name, $rolesArray)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         return $next($request);
     }
-
 }
