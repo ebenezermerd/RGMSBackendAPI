@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\StatusAssignmentResource;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Models\UserCoeAssignment;
+use App\Models\Role;
 
 class AdminController extends Controller
 {
@@ -146,6 +148,85 @@ class AdminController extends Controller
             return response()->json(['error' => 'Resource not found'], 404);
         }
     }
+
+      // lets add here a function that will assign a user to role of coe
+      // lets add here a function that will assign a user to role of coe
+      public function changeUserRole(Request $request)
+      {
+          $request->validate([
+              'user_id' => 'required|exists:users,id',
+              'role' => 'required|in:coe,admin,reviewer,researcher,auditor,directorate',
+          ]);
+  
+          $user = User::find($request->user_id);
+  
+          if (!$user) {
+              return response()->json(['message' => 'User not found'], 404);
+          }
+  
+          // Check if the role is being changed from 'coe' to another role
+          if ($user->role->role_name === 'coe' && $request->role !== 'coe') {
+              // Remove COE class relationship
+              UserCoeAssignment::where('user_id', $user->id)->delete();
+          }
+  
+          // Get the role id from the roles table
+          $role = Role::where('role_name', $request->role)->first();
+  
+          if (!$role) {
+              return response()->json(['message' => 'Role not found'], 404);
+          }
+  
+          $user->role_id = $role->id;
+          $user->save();
+  
+          return response()->json([
+              'message' => 'User role updated successfully',
+              'data' => $user
+          ]);
+      }
+  
+  
+      // Assign a COE class to a user
+      public function assignUserToCoe(Request $request)
+      {
+          $request->validate([
+              'user_id' => 'required|exists:users,id',
+              'coe_class_id' => 'required|exists:coe_classes,id',
+          ]);
+  
+          // Check if the user already has the coe role
+          $user = User::find($request->user_id);
+  
+          if ($user->role->role_name !== 'coe') {
+              return response()->json(['error' => 'User must have COE role to be assigned'], 400);
+          }
+  
+          // Create or update the assignment
+          UserCoeAssignment::updateOrCreate(
+              ['user_id' => $request->user_id],
+              ['coe_class_id' => $request->coe_class_id]
+          );
+  
+          return response()->json(['message' => 'User successfully assigned to COE class']);
+      }
+  
+  
+  
+      // Show assignments for a specific COE class
+      public function showAssignments($coeClassId)
+      {
+          $coeClass = CoeClass::with('userCoeAssignments.user')->find($coeClassId);
+  
+          if (!$coeClass) {
+              return response()->json(['message' => 'COE class not found'], 404);
+          }
+  
+          return response()->json($coeClass->userCoeAssignments);
+      }
+  
+  
+      
   
 }
 

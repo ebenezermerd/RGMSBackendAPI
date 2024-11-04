@@ -136,9 +136,9 @@ Route::middleware(['role:admin|directorate', 'auth:sanctum'])->group(function ()
         Route::get('/{user}', [AdminController::class, 'show']);
         Route::put('/{user}', [AdminController::class, 'update']);
         Route::delete('/{user}', [AdminController::class, 'destroy']);
-        Route::patch('/change-role', [CoeClassController::class, 'changeUserRole']); // Change user role to COE or admin
-        Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
-        Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
+        Route::patch('/change-role', [AdminController::class, 'changeUserRole']); // Change user role to COE or admin
+        Route::post('/assign', [AdminController::class, 'assignUserToCoe']); // Assign user to COE class
+        Route::get('/{coeClassId}/assignments', [AdminController::class, 'showAssignments']); // Show assignments for a COE class
     });
 
 });
