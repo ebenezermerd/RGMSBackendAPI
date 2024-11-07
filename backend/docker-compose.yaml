@@ -20,7 +20,7 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     networks:
-      - app-network
+      - backend-laravel-server_app-network
     depends_on:
       - db
 
@@ -34,7 +34,19 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
     networks:
-      - app-network
+      - backend-laravel-server_app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      - backend-laravel-server_app-network
 
   web:
     image: nginx:latest
@@ -47,13 +59,13 @@ services:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./docker/nginx/snippets:/etc/nginx/snippets
     networks:
-      - app-network
+      - backend-laravel-server_app-network
     depends_on:
       - app
 
 networks:
-  app-network:
-    driver: bridge
+  backend-laravel-server_app-network:
+    external: true
 
 volumes:
   dbdata:
