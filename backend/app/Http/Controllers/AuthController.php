@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\UserResource;
 use App\Models\Role;
+use App\Models\UnregisteredReviewer;
+use App\Models\UnregisteredReviewerProposalAssignment;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UserProposalAssignment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -47,6 +50,30 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role_id' => $role->id, // Associate with role
         ]);
+          // Check if the email exists in unregistered_reviewers
+          $unregisteredReviewer = UnregisteredReviewer::where('email', $request->email)->first();
+
+          if ($unregisteredReviewer) {
+              // Transfer assignments
+              $assignments = UnregisteredReviewerProposalAssignment::where('unregistered_reviewer_id', $unregisteredReviewer->id)->get();
+  
+              foreach ($assignments as $assignment) {
+                  UserProposalAssignment::create([
+                      'reviewer_id' => $user->id,
+                      'proposal_id' => $assignment->proposal_id,
+                      'start_time' => $assignment->start_time,
+                      'end_time' => $assignment->end_time,
+                      'request_status' => $assignment->request_status,
+                      'comment' => $assignment->comment,
+                  ]);
+  
+                  // Delete the unregistered assignment
+                  $assignment->delete();
+              }
+  
+              // Delete the unregistered reviewer
+              $unregisteredReviewer->delete();
+          }
     
         return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
     }

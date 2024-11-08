@@ -9,8 +9,12 @@ use Illuminate\Http\Request;
 use App\Models\Proposal;
 use App\Models\Reviewer;
 use App\Models\Review;
-use Storage;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\UserResource;
+use App\Models\UnregisteredReviewer;
+use App\Models\UnregisteredReviewerProposalAssignment;
+use Illuminate\Support\Facades\Mail;
+
 
 class CoeProposalController extends Controller
 {
@@ -50,29 +54,72 @@ class CoeProposalController extends Controller
     }
 
     //Assign a reviewer to a proposal
-    public function assignReviewer(Request $request, $coeClassName, $proposalId)
+    // public function assignReviewer(Request $request, $coeClassName, $proposalId)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'reviewer_id' => 'required|exists:users,id',
+    //         ]);
+
+    //         // Find the proposal by COE and ID
+    //         $proposal = Proposal::where('COE', $coeClassName)->findOrFail($proposalId);
+
+    //         // Find the user by ID and check if they are a reviewer
+    //         $reviewer = User::findOrFail($request->input('reviewer_id'));
+    //         if ($reviewer->role->role_name !== 'reviewer') {
+    //             return response()->json(['error' => 'User does not have the reviewer role.'], 403);
+    //         }
+
+    //         // Attach the reviewer to the proposal using the custom pivot table
+    //         $proposal->reviewers()->attach($reviewer->id);
+
+    //         return response()->json(['message' => 'Reviewer assigned successfully.']);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => $e->getMessage()], 500);
+    //     }
+    // }
+
+
+    public function assignReviewer(Request $request, $proposalId)
     {
-        try {
-            $request->validate([
-                'reviewer_id' => 'required|exists:users,id',
+        $request->validate([
+            'reviewer_email' => 'required|email',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+        ]);
+    
+        $reviewer = User::where('email', $request->reviewer_email)->first();
+        $proposal = Proposal::findOrFail($proposalId);
+    
+        if ($reviewer) {
+            // Registered reviewer
+            $assignment = UserProposalAssignment::create([
+                'reviewer_id' => $reviewer->id,
+                'proposal_id' => $proposal->id,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'request_status' => 'pending',
             ]);
-
-            // Find the proposal by COE and ID
-            $proposal = Proposal::where('COE', $coeClassName)->findOrFail($proposalId);
-
-            // Find the user by ID and check if they are a reviewer
-            $reviewer = User::findOrFail($request->input('reviewer_id'));
-            if ($reviewer->role->role_name !== 'reviewer') {
-                return response()->json(['error' => 'User does not have the reviewer role.'], 403);
-            }
-
-            // Attach the reviewer to the proposal using the custom pivot table
-            $proposal->reviewers()->attach($reviewer->id);
-
-            return response()->json(['message' => 'Reviewer assigned successfully.']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+    
+            // Send email to registered reviewer
+            Mail::to($reviewer->email)->send(new ReviewRequestMail($assignment));
+        } else {
+            // Unregistered reviewer
+            $unregisteredReviewer = UnregisteredReviewer::firstOrCreate(['email' => $request->reviewer_email]);
+    
+            $assignment = UnregisteredReviewerProposalAssignment::create([
+                'unregistered_reviewer_id' => $unregisteredReviewer->id,
+                'proposal_id' => $proposal->id,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'request_status' => 'pending',
+            ]);
+    
+            // Send email to unregistered reviewer
+            Mail::to($request->reviewer_email)->send(new ReviewRequestMail($assignment));
         }
+    
+        return response()->json(['message' => 'Review request sent successfully']);
     }
 
     public function getAssignedReviewers($coeClassName, $proposalId)
