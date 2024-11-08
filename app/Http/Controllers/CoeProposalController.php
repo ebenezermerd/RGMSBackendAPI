@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Proposal;
 use App\Models\Reviewer;
 use App\Models\Review;
-use Storage;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\UserResource;
 
 class CoeProposalController extends Controller

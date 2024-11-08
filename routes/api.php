@@ -128,11 +128,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['role:admin|directorate', 'auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
+        Route::get('/', [AdminController::class, 'index']);
         Route::get('/fund-requests', [FundRequestController::class, 'index']);
         Route::get('/activities', [ActivityHistoryController::class, 'index']);
         Route::post('/activities', [ActivityHistoryController::class, 'store']);
         Route::post('/{adminId}/calls', [CallController::class, 'store'])->name('admin.calls.store');
-        Route::get('/', [AdminController::class, 'index']);
         Route::get('/{user}', [AdminController::class, 'show']);
         Route::put('/{user}', [AdminController::class, 'update']);
         Route::delete('/{user}', [AdminController::class, 'destroy']);

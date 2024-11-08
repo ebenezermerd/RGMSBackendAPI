@@ -5,7 +5,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'], // Update with your front-end URL
+    'allowed_origins' => ['http://localhost:5173', 'http://rgms.ethernet.edu.et'], // Update with your front-end URL
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
