@@ -28,22 +28,18 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy existing application directory contents
+# Copy application files
 COPY . /var/www/html/backend
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www/html/backend
-
 # Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache \
+    && chmod -R 777 /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache
 
-# Set permissions for Laravel
-RUN chmod -R 777 /var/www/html/backend/storage /var/www/html/backend/bootstrap/cache
-
-
-# Change current user to www
+# Change current user to www-data
 USER www-data
 
-# Expose port 9000 and start php-fpm server
+# Expose PHP-FPM default port
 EXPOSE 9000
+
+# Run PHP-FPM
 CMD ["php-fpm"]

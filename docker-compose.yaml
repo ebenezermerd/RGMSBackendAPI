@@ -14,7 +14,7 @@ services:
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     environment:
       DB_CONNECTION: ${DB_CONNECTION}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: db
       DB_PORT: ${DB_PORT}
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
@@ -36,10 +36,12 @@ services:
       - dbdata:/var/lib/mysql
     networks:
       backend-laravel-server_app-network:
-        ipv4_address: http://196.189.148.201
+        ipv4_address: 196.189.148.201
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
+    container_name: rgms-aastu-phpmyadmin
+    restart: unless-stopped
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -60,7 +62,6 @@ services:
     volumes:
       - .:/var/www/html/backend
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/snippets:/etc/nginx/snippets
     networks:
       backend-laravel-server_app-network:
         ipv4_address: 196.189.148.203
@@ -69,7 +70,10 @@ services:
 
 networks:
   backend-laravel-server_app-network:
-    external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 196.189.148.0/24
 
 volumes:
   dbdata:
