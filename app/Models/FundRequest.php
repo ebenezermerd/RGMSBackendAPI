@@ -10,7 +10,7 @@ class FundRequest extends Model
     use HasFactory;
     protected $fillable = [
         'request_status', 'request_reason', 'request_amount', 'request_needed_date',
-        'request_proof', 'user_id', 'activity_id', 'phase_id', 'proposal_id'
+         'user_id', 'activity_id', 'phase_id', 'proposal_id'
     ];
 
     public function user()

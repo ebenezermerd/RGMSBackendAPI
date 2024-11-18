@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('collaborator_organization');
             $table->string('collaborator_phone_number');
             $table->string('collaborator_email');
+            $table->boolean('verified')->default(false);
             $table->foreignId('proposal_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

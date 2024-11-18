@@ -17,6 +17,9 @@ return new class extends Migration {
             $table->decimal('transaction_amount', 15, 2);
             $table->string('transaction_type');
             $table->text('transaction_description')->nullable();
+            $table->boolean('verified')->default(false);
+            $table->text('verification_details')->nullable();
+            $table->timestamp('verified_at')->nullable();
             $table->foreignId('fund_request_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();

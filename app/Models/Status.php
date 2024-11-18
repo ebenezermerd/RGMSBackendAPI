@@ -33,4 +33,9 @@ class Status extends Model
         return $this->hasMany(StatusAssignment::class);
     }
 
+    public function complaints()
+    {
+        return $this->belongsTo(Complaint::class);
+    }
+
 }

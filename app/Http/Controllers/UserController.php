@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Validator;
 
@@ -21,6 +22,7 @@ class   UserController extends Controller
         return response()->json([
             'message' => 'User data',
             'userdata' => new UserResource($user),
+            'email_verified' => $user->hasVerifiedEmail(), // Include email_verified field
         ]);
     }
     /**
@@ -137,6 +139,24 @@ class   UserController extends Controller
         ], 200);
     }
     
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect'], 400);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password changed successfully'], 200);
+    }
 
     
     

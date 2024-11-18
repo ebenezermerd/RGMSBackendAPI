@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone_number');
 
             $table->string('password');
+            $table->rememberToken()->after('password');
             $table->string('organization')->nullable();
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             $table->string('city')->nullable();
@@ -29,7 +30,10 @@ return new class extends Migration
             $table->text('bio')->nullable();
             $table->string('profile_image')->nullable();
             $table->timestamps();
+            $table->boolean('email_verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('verification_code', 6)->nullable();
+            $table->timestamp('verification_code_expires_at')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

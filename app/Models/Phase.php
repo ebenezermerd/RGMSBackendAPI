@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Phase extends Model
 {
     use HasFactory;
-    protected $fillable = ['phase_name', 'phase_startdate', 'phase_enddate', 'phase_objective', 'proposal_id'];
+    protected $fillable = ['phase_name', 'phase_startdate', 'phase_enddate', 'phase_objective', 'proposal_id', 'phase_budget', 'remaining_budget'];
 
     public function activities()
     {

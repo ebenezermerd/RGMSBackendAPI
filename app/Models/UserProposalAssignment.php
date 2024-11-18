@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class UserProposalAssignment extends Model
 {
     use HasFactory;
-    protected $fillable = ['reviewer_id', 'proposal_id'];
+    protected $fillable = ['reviewer_id', 'proposal_id',  'start_time', 'end_time', 'request_status', 'comment'];
 
     public function reviewer()
     {

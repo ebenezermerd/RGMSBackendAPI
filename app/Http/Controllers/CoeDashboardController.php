@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\StatusAssignmentResource;
 use Illuminate\Http\Request;
 use App\Models\Proposal;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -32,15 +34,23 @@ class CoeDashboardController extends Controller
         if (!in_array($coeClassId, $validCoEClasses)) {
             return response()->json(['error' => 'Invalid COE class'], 400);
         }
-
+        $role = Role::where('role_name', 'reviewer')->first();
         // Fetch statistics
         $proposalsReceived = Proposal::where('COE', $coeClassId)->count();
-        $reviewersRegistered = User::where('role_id', 3)->count();
-
+        $reviewersRegistered = User::where('role_id', $role->id)->count();
+        $approvedProposals = Proposal::where('COE', $coeClassId)
+            ->with('latestStatusAssignment')
+            ->get()
+            ->filter(function ($proposal) {
+            $statusAssignment = new StatusAssignmentResource($proposal->latestStatusAssignment);
+            return $statusAssignment->status_name === 'approved';
+            })
+            ->count();
         // Return the dashboard data
         return response()->json([
             'proposalsReceived' => $proposalsReceived,
             'reviewersRegistered' => $reviewersRegistered,
+            'approvedProposals' => $approvedProposals,
         ]);
     }
 

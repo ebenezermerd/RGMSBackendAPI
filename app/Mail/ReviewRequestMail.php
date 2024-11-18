@@ -1,4 +1,5 @@
 <?php
+// backend-laravel-server/app/Mail/ReviewRequestMail.php
 
 namespace App\Mail;
 
@@ -14,14 +15,16 @@ class ReviewRequestMail extends Mailable
     use Queueable, SerializesModels;
 
     public $assignment;
+    public $coe;
     public $isRegistered;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($assignment, $isRegistered = true)
+    public function __construct($assignment, $coe, $isRegistered = true)
     {
         $this->assignment = $assignment;
+        $this->coe = $coe;
         $this->isRegistered = $isRegistered;
     }
 
@@ -31,7 +34,7 @@ class ReviewRequestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Review Request',
+            subject: 'Review Request From ' . ucwords(str_replace('-', ' ', $this->coe)),
         );
     }
 
@@ -48,6 +51,7 @@ class ReviewRequestMail extends Mailable
             view: 'emails.review_request',
             with: [
                 'assignment' => $this->assignment,
+                'coe' => $this->coe,
                 'responseUrl' => $responseUrl,
             ],
         );

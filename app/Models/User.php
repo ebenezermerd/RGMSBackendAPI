@@ -3,14 +3,18 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Notifications\CustomResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Passwords\CanResetPassword;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
 
     /**
      * The attributes that are mass assignable.
@@ -20,7 +24,7 @@ class User extends Authenticatable
     protected $fillable = [
         'first_name', 'last_name','username', 'email', 'phone_number', 'password', 
         'organization', 'role_id', 'city', 'present_address', 
-        'permanent_address', 'date_of_birth', 'bio', 'profile_image'
+        'permanent_address', 'date_of_birth', 'bio', 'profile_image','email_verified',  'verification_code', 'verification_code_expires_at'
    
     ];
 
@@ -80,12 +84,24 @@ public function coeClass()
 public function proposalsAssigned()
 {
     return $this->belongsToMany(Proposal::class, 'user_proposal_assignments', 'reviewer_id', 'proposal_id')
+                ->wherePivot('request_status', 'accepted') // Ensure the request status is 'accepted'
                 ->withTimestamps() // Using the custom pivot table
                 ->with(['phases', 'phases.activities', 'reviews']);
 }
 public function activities(){
     return $this->hasMany(ActivityHistory::class);
 }
+
+public function reviewerStatus()
+{
+    return $this->hasOne(ReviewerStatus::class, 'reviewer_id');
+}
+
+public function complaints(){
+    return $this->hasMany(Complaint::class);
+}
+
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -110,5 +126,15 @@ public function activities(){
         ];
     }
 
+     /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new CustomResetPasswordNotification($token));
+    }
     
 }

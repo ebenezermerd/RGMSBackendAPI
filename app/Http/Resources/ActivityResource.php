@@ -18,6 +18,7 @@ class ActivityResource extends JsonResource
             'id' => $this->id,
             'activity_name' => $this->activity_name,
             'activity_budget' => $this->activity_budget,
+            'remaining_budget' => $this->remaining_budget,
             'phase_id' => $this->phase_id,
             'status_assignments' => StatusAssignmentResource::collection($this->whenLoaded('statusAssignments')),
             'latest_status' => $this->latestStatusAssignment ? new StatusAssignmentResource($this->latestStatusAssignment) : null,

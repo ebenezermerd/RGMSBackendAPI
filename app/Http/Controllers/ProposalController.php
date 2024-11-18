@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProposalResource;
 use App\Http\Resources\StatusAssignmentResource;
+use App\Mail\CollaborationRequestMail;
 use App\Models\FundRequest;
 use App\Models\Proposal;
 use App\Models\User;
@@ -19,6 +20,7 @@ use App\Models\Collaborator;
 use App\Models\Call;
 use App\Models\Message;
 use App\Models\CoeClass;
+use Illuminate\Support\Facades\Mail;
 
 class ProposalController extends Controller
 {
@@ -74,7 +76,7 @@ class ProposalController extends Controller
             'proposal_methodology' => 'required|max:1500',
             'proposal_results' => 'required|max:1500',
             'proposal_reference' => 'required|max:1500',
-            'proposal_submitted_date' => 'required|date',
+            'proposal_start_date' => 'required|date',
             'proposal_end_date' => 'required|date',
             'proposal_budget' => 'required|numeric',
             'collaborators' => 'required|array',
@@ -101,14 +103,10 @@ class ProposalController extends Controller
         }
 
         // Retrieve the call
-        $call = Call::find($request->call_id);
-        if (!$call) {
-            return response()->json(['error' => 'Call not found'], 404);
-        }
-        
+        $call = Call::latest()->first();
         // Check for existing proposal
         $existingProposal = Proposal::where('user_id', $user_id)
-                                    ->where('call_id', $request->call_id)
+                                    ->where('call_id', $call->id)
                                     ->with('latestStatusAssignment')
                                     ->first();
         
@@ -127,9 +125,24 @@ class ProposalController extends Controller
         // Retrieve or create 'pending' status ID
         $pendingStatus = Status::firstOrCreate(['name' => 'pending']);
 
+        // Calculate the total budget from phases and activities
+        $totalPhaseBudget = 0;
+        foreach ($request->phases as $phaseData) {
+            $phaseBudget = array_sum(array_column($phaseData['activities'], 'activity_budget'));
+            $totalPhaseBudget += $phaseBudget;
+        }
+
+        // Check if the total phase budget matches the proposal budget
+        if ($totalPhaseBudget != $request->proposal_budget) {
+            return response()->json([
+                'message' => "The proposal budget doesn't align with the cumulative sum of the phases budget mentioned in the proposal"
+            ], 422);
+        }
+
         // Create the proposal
         $proposalData = $request->all();
         $proposalData['user_id'] = $user_id;
+        $proposalData['remaining_budget'] = $request->proposal_budget;
         $proposalData['created_at'] = now(); // Set the created_at to the current time
         $proposal = Proposal::create($proposalData);
 
@@ -140,14 +153,19 @@ class ProposalController extends Controller
             'statusable_type' => Proposal::class,
         ]);
 
+        // Get user for the proposal owner
+        $user = Auth::user();
         // Loop through the phases and create them
         foreach ($request->phases as $phaseData) {
+            $phaseBudget = array_sum(array_column($phaseData['activities'], 'activity_budget'));
             $phase = Phase::create([
                 'phase_name' => $phaseData['phase_name'],
                 'phase_startdate' => $phaseData['phase_startdate'],
                 'phase_enddate' => $phaseData['phase_enddate'],
                 'phase_objective' => $phaseData['phase_objective'],
-                'proposal_id' => $proposal->id
+                'phase_budget' => $phaseBudget,
+                'remaining_budget' => $phaseBudget,
+                'proposal_id' => $proposal->id,
             ]);
 
             // Loop through the collaborators and create them
@@ -158,9 +176,13 @@ class ProposalController extends Controller
                     'collaborator_organization' => $collaboratorData['collaborator_organization'],
                     'collaborator_phone_number' => $collaboratorData['collaborator_phone_number'],
                     'collaborator_email' => $collaboratorData['collaborator_email'],
-                    'proposal_id' => $proposal->id
+                    'proposal_id' => $proposal->id,
+                    'verified' => false, // Set as unverified
                 ]);
                 $collaborator->save(); // Save each collaborator
+
+                // Send collaboration request email
+                Mail::to($collaborator->collaborator_email)->send(new CollaborationRequestMail($proposal, $collaborator, $user));
             }
 
             // Assign status to the phase (default to 'pending' if not provided)
@@ -174,7 +196,9 @@ class ProposalController extends Controller
             foreach ($phaseData['activities'] as $activityData) {
                 $activity = $phase->activities()->create([
                     'activity_name' => $activityData['activity_name'],
-                    'activity_budget' => $activityData['activity_budget']
+                    'activity_budget' => $activityData['activity_budget'],
+                    'remaining_budget' => $activityData['activity_budget'],
+                    'phase_id' => $phase->id,
                 ]);
 
                 // Assign status to the activity (default to 'pending' if not provided)
@@ -187,7 +211,6 @@ class ProposalController extends Controller
         }
 
         // Send a success message to the user
-        $user = Auth::user();
         $messageContent = "Dear {$user->first_name}, your proposal titled '{$proposal->proposal_title}' has been successfully submitted. Please wait for further notice. Thank you for participating in this journey.";
         $sender_type = 'coe_class';
         // Retrieve the COE class by COE name

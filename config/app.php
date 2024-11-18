@@ -13,7 +13,9 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    'name' => env('APP_NAME', 'AASTU-Research-Management-System'),
 
     /*
     |--------------------------------------------------------------------------

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->date('phase_startdate');
             $table->date('phase_enddate');
             $table->text('phase_objective');
+            $table->decimal('phase_budget', 15, 2)->default(0);
+            $table->decimal('remaining_budget', 15, 2)->default(0);
             $table->foreignId('proposal_id')->constrained('proposals')->onDelete('cascade');
             $table->timestamps();
         });

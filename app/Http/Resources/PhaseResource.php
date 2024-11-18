@@ -21,6 +21,8 @@ class PhaseResource extends JsonResource
             'phase_startdate' => $this->phase_startdate,
             'phase_enddate' => $this->phase_enddate,
             'phase_objective' => $this->phase_objective,
+            'phase_budget' => $this->phase_budget,
+            'remaining_budget' => $this->remaining_budget,
             'proposal_id' => $this->proposal_id,
             'status_assignments' => StatusAssignmentResource::collection($this->whenLoaded('statusAssignments')),
             'latest_status' => $this->latestStatusAssignment ? new StatusAssignmentResource($this->latestStatusAssignment) : null,

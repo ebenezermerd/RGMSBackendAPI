@@ -11,7 +11,7 @@ class Collaborator extends Model
     protected $fillable = [
         'collaborator_name', 'collaborator_gender', 
         'collaborator_organization', 'collaborator_phone_number', 
-        'collaborator_email', 'proposal_id'
+        'collaborator_email', 'verified', 'proposal_id'
     ];
 
     public function proposal()

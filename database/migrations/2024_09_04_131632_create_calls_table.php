@@ -24,6 +24,7 @@ return new class extends Migration
             $table->date('endDate');
             $table->string('proposalType');
             $table->boolean('isResubmissionAllowed')->default(false);
+            $table->string('coverImage')->nullable(); // Added column for cover image
             $table->timestamps();
         });
     }

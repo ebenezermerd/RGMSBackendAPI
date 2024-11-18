@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Activity extends Model
 {
     use HasFactory;
-    protected $fillable = ['activity_name', 'activity_budget'];
+    protected $fillable = ['activity_name', 'activity_budget', 'phase_id', 'remaining_budget'];
 
     public function phase()
     {

@@ -15,13 +15,30 @@ use App\Http\Controllers\StatusAssignmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CollaboratorController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Middleware\CheckRole;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
+
+
+Route::post('/email/verification-notification', [VerificationController::class, 'sendVerificationEmail'])->middleware('auth:sanctum');
+Route::post('/email/verify', [VerificationController::class, 'verifyEmail'])->name('verification.verify');
+
+Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.reset');
+Route::post('/collaborator/accept', [CollaboratorController::class, 'acceptInvitation']);
+
 Route::get('/coe-classes', [CoeClassController::class, 'getAllCoeClasses']);
 Route::get('/calls/latest', [CallController::class, 'index'])->name('calls.latest');
 // COE Class Management
@@ -41,6 +58,7 @@ Route::get('/sanctum/csrf-cookie', function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     // User-specific resource routes
     Route::apiResource('/user', UserController::class);
+    Route::post('/user/change-password', [UserController::class, 'changePassword']);
     Route::post('/user/edit-profile/{userId}', [UserController::class, 'update']);
     Route::group(['prefix' => 'users/{user}'], function () {
         Route::get('/messages', [MessageController::class, 'index']); // Get all messages
@@ -49,8 +67,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/messages/{id}', [MessageController::class, 'destroy']); // Delete a message
         Route::patch('/messages/{id}/mark-as-read', [MessageController::class, 'markAsRead']); // Update a message
         Route::apiResource('proposals', ProposalController::class);
-        Route::apiResource('transactions', TransactionController::class);
-        Route::get('/fund-requests', [FundRequestController::class, 'userFundRequests']);
+        Route::get('/transactions', [TransactionController::class, 'userTransactions']);
+        Route::get('/fund-requests', [FundRequestController::class, 'getUserFundRequests']);
+        Route::patch('/fund-requests/{requestId}', [FundRequestController::class, 'update']);
+        Route::delete('/fund-requests/{requestId}', [FundRequestController::class, 'destroy']);
         Route::post('/fund-requests', [FundRequestController::class, 'store']);
     });
 
@@ -91,7 +111,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Proposal Management under COE
     Route::group(['prefix' => 'coe/'], function () {
-        Route::get('/fund-requests', [FundRequestController::class, 'index']);
+        Route::get('/{coeClassId}/complaints', [ComplaintController::class, 'getComplaintsByCOE']);
+
+        Route::get('/{userId}/transactions', [TransactionController::class, 'index']);
+        Route::get('/{userId}/fund-requests', [FundRequestController::class, 'index']);
+        Route::post('/{userId}/fund-requests/{fundRequestId}/approve', [FundRequestController::class, 'approveStatus']);
+        Route::post('/{userId}/fund-requests/{fundRequestId}/reject', [FundRequestController::class, 'rejectStatus']);
         Route::prefix('/{coeClassId}')->group(function () {
             Route::get('/dashboard', [CoeDashboardController::class, 'index']);
             Route::get('/stats', [CoeDashboardController::class, 'stats']);
@@ -101,8 +126,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('/reviewed-proposals', [CoeProposalController::class, 'getReviewedProposals']);
             Route::get('/{proposalId}', [CoeProposalController::class, 'show']);
     
-            Route::post('/{proposalId}/assign-reviewer', [CoeProposalController::class, 'assignReviewer']);
-            Route::post('/{proposalId}/remove-reviewer/{reviewerId}', [CoeProposalController::class, 'removeReviewer']); // Detach or remove reviewer
+            Route::post('/{proposalId}/assign-reviewer', [CoeProposalController::class, 'requestReviewer']);
+            Route::post('/{proposalId}/remove-reviewer', [CoeProposalController::class, 'removeReviewer']); // Detach or remove reviewer
             Route::post('/{proposalId}/download', [CoeProposalController::class, 'downloadProposal']);
             Route::get('/{proposalId}/reviewers', [CoeProposalController::class, 'getAssignedReviewers']);
             Route::get('/{proposalId}/status', [StatusAssignmentController::class, 'getProposalStatus']);
@@ -125,20 +150,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Logout route
 });
 
+Route::post('/complaints', [ComplaintController::class, 'store']);
+
+// Auditor Routes of transaction verify 
+Route::middleware(['role:auditor', 'auth:sanctum'])->group(function () {
+    Route::post('/auditor/complaints/{id}', [ComplaintController::class, 'update']);
+    Route::get('/auditor/{userId}/complaints', [ComplaintController::class, 'index']);
+    Route::get('/auditor/{userId}/transactions', [TransactionController::class, 'index']);
+    Route::patch('/auditor/{userId}/transactions/{id}/verify', [TransactionController::class, 'verifyTransaction']);
+});
 
 Route::middleware(['role:admin|directorate', 'auth:sanctum'])->group(function () {
     Route::prefix('admin')->group(function () {
-        Route::get('/', [AdminController::class, 'index']);
         Route::get('/fund-requests', [FundRequestController::class, 'index']);
         Route::get('/activities', [ActivityHistoryController::class, 'index']);
         Route::post('/activities', [ActivityHistoryController::class, 'store']);
         Route::post('/{adminId}/calls', [CallController::class, 'store'])->name('admin.calls.store');
+        Route::get('/', [AdminController::class, 'index']);
         Route::get('/{user}', [AdminController::class, 'show']);
         Route::put('/{user}', [AdminController::class, 'update']);
         Route::delete('/{user}', [AdminController::class, 'destroy']);
-        Route::patch('/change-role', [CoeClassController::class, 'changeUserRole']); // Change user role to COE or admin
-        Route::post('/assign', [CoeClassController::class, 'assignUserToCoe']); // Assign user to COE class
-        Route::get('/{coeClassId}/assignments', [CoeClassController::class, 'showAssignments']); // Show assignments for a COE class
+        Route::patch('/change-role', [AdminController::class, 'changeUserRole']); // Change user role to COE or admin
+        Route::post('/assign', [AdminController::class, 'assignUserToCoe']); // Assign user to COE class
+        Route::get('/{coeClassId}/assignments', [AdminController::class, 'showAssignments']); // Show assignments for a COE class
     });
 
 });

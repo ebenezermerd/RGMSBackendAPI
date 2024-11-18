@@ -8,6 +8,7 @@ use App\Models\UserProposalAssignment;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewerController extends Controller
 {
@@ -62,7 +63,7 @@ class ReviewerController extends Controller
     public function getAssignedProposals()
     {
         // Assuming the logged-in user is a reviewer
-        $reviewer = auth()->user();
+        $reviewer = Auth::user();
 
         if (!$reviewer) {
             return response()->json(['error' => 'Unauthorized'], 401);

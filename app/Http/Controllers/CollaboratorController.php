@@ -52,6 +52,24 @@ class CollaboratorController extends Controller
         return new CollaboratorResource($collaborator);
     }
 
+    public function acceptInvitation(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $collaborator = Collaborator::where('collaborator_email', $request->email)->first();
+
+        if (!$collaborator) {
+            return response()->json(['message' => 'Invalid invitation link.'], 400);
+        }
+
+        $collaborator->verified = true;
+        $collaborator->save();
+
+        return response()->json(['message' => 'Collaboration invitation accepted successfully.'], 200);
+    }
+
     /**
      * Display the specified resource.
      */

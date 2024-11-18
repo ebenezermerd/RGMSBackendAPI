@@ -22,10 +22,11 @@ return new class extends Migration
                 $table->text('proposal_methodology');
                 $table->text('proposal_results');
                 $table->text('proposal_reference');
-                $table->date('proposal_submitted_date');
+                $table->date('proposal_start_date');
                 $table->date('proposal_end_date');
                 $table->decimal('proposal_budget', 15, 2);
-                
+                $table->decimal('remaining_budget', 15, 2)->default(0);
+
                 // Foreign key for user_id
                 $table->foreignId('user_id')->constrained()->onDelete('cascade');
                 

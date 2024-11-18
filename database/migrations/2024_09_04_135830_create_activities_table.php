@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('activity_name');
             $table->decimal('activity_budget', 15, 2);
+            $table->decimal('remaining_budget', 15, 2)->default(0);
             $table->foreignId('phase_id')->constrained()->onDelete('cascade'); // Foreign key to phases table
             $table->timestamps();
         });

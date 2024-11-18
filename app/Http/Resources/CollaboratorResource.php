@@ -21,6 +21,7 @@ class CollaboratorResource extends JsonResource
             'collaborator_organization' => $this->collaborator_organization,
             'collaborator_phone_number' => $this->collaborator_phone_number,
             'collaborator_email' => $this->collaborator_email,
+            'verified' => $this->verified,
             'proposal_id' => $this->proposal_id, // Foreign key
             'created_at' => $this->created_at->toDateTimeString(),
             'updated_at' => $this->updated_at->toDateTimeString(),

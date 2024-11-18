@@ -16,6 +16,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('reviewer_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('proposal_id')->constrained('proposals')->onDelete('cascade');
+            $table->timestamp('start_time')->nullable();
+            $table->timestamp('end_time')->nullable();
+            $table->string('request_status')->default('pending'); // pending, accepted, rejected
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }

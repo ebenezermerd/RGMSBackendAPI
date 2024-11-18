@@ -28,6 +28,6 @@ class ReviewRequestController extends Controller
             'comment' => $request->comment,
         ]);
 
-        return response()->json(['message' => 'Response recorded successfully']);
+        return view('review_success');
     }
 }
