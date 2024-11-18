@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rgms-aastu-app
+    container_name: rgms-aastu-app
+    restart: unless-stopped
+    working_dir: /var/www/html/backend
+    volumes:
+      - .:/var/www/html/backend
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      backend-laravel-server_app-network:
+        ipv4_address: 196.189.148.200
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: rgms-aastu-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      backend-laravel-server_app-network:
+        ipv4_address: http://196.189.148.201
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      backend-laravel-server_app-network:
+        ipv4_address: 196.189.148.202
+
+  web:
+    image: nginx:latest
+    container_name: rgms-aastu-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html/backend
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/snippets:/etc/nginx/snippets
+    networks:
+      backend-laravel-server_app-network:
+        ipv4_address: 196.189.148.203
+    depends_on:
+      - app
+
+networks:
+  backend-laravel-server_app-network:
+    external: true
+
+volumes:
+  dbdata:
+    driver: local
