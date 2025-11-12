@@ -5,8 +5,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://rgms-aastu-5wnwf7dnh-ebenezermerd-gmailcoms-projects.vercel.app'], // Update with your front-end URL
-    'allowed_origins_patterns' => [],
+    'allowed_origins' => ['http://localhost:5173'], // Update with your front-end URL
+    'allowed_origins_patterns' => ['/^http:\/\/(127\.0\.0\.1|localhost)(:\\d+)?$/'],
 
     'allowed_headers' => ['*'],
 
